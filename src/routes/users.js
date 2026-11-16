@@ -5,7 +5,8 @@ const { pool, query, queryOne, withTransaction } = require('../db');
 const { requireRole, hashPassword } = require('../auth');
 const { Validator } = require('../validate');
 const { assignMemberNumber } = require('../member-number');
-const { setFlash } = require('../helpers');
+const { setFlash, parseId } = require('../helpers');
+const { securityLog } = require('../security-log');
 
 const router = express.Router();
 
@@ -158,7 +159,7 @@ router.post('/admin/pengguna', async (req, res, next) => {
 
 router.get('/admin/pengguna/:id/edit', async (req, res, next) => {
   try {
-    const user = await queryOne('SELECT * FROM users WHERE id = ?', [Number.parseInt(req.params.id, 10)]);
+    const user = await queryOne('SELECT * FROM users WHERE id = ?', [parseId(req.params.id)]);
     if (!user) {
       res.status(404);
       return res.render('errors/404', { title: 'Pengguna tidak ditemukan', active: 'pengguna' });
@@ -170,7 +171,7 @@ router.get('/admin/pengguna/:id/edit', async (req, res, next) => {
 });
 
 router.post('/admin/pengguna/:id', async (req, res, next) => {
-  const id = Number.parseInt(req.params.id, 10);
+  const id = parseId(req.params.id);
   const { isValid, errors, data } = validateUser(req.body, { requirePassword: false });
 
   try {
@@ -222,6 +223,13 @@ router.post('/admin/pengguna/:id', async (req, res, next) => {
       if (data.role === 'anggota' && !noAnggota) await assignMemberNumber(connection, id);
     });
 
+    if (existing.role !== data.role) {
+      securityLog('user_role_changed', { actorId: req.user.id, userId: id, from: existing.role, to: data.role });
+    }
+    if (existing.status !== data.status) {
+      securityLog('user_status_changed', { actorId: req.user.id, userId: id, from: existing.status, to: data.status });
+    }
+
     setFlash(req, 'sukses', `Data pengguna "${data.nama}" berhasil diperbarui.`);
     res.redirect('/admin/pengguna');
   } catch (error) {
@@ -230,7 +238,7 @@ router.post('/admin/pengguna/:id', async (req, res, next) => {
 });
 
 router.post('/admin/pengguna/:id/status', async (req, res, next) => {
-  const id = Number.parseInt(req.params.id, 10);
+  const id = parseId(req.params.id);
 
   try {
     const user = await queryOne('SELECT id, nama, role, status FROM users WHERE id = ?', [id]);
@@ -253,6 +261,7 @@ router.post('/admin/pengguna/:id/status', async (req, res, next) => {
 
     const newStatus = user.status === 'aktif' ? 'nonaktif' : 'aktif';
     await pool.execute('UPDATE users SET status = ? WHERE id = ?', [newStatus, id]);
+    securityLog('user_status_changed', { actorId: req.user.id, userId: id, from: user.status, to: newStatus });
     setFlash(
       req,
       'sukses',
@@ -265,7 +274,7 @@ router.post('/admin/pengguna/:id/status', async (req, res, next) => {
 });
 
 router.post('/admin/pengguna/:id/hapus', async (req, res, next) => {
-  const id = Number.parseInt(req.params.id, 10);
+  const id = parseId(req.params.id);
 
   try {
     const user = await queryOne('SELECT id, nama, role FROM users WHERE id = ?', [id]);
@@ -289,6 +298,7 @@ router.post('/admin/pengguna/:id/hapus', async (req, res, next) => {
     }
 
     await pool.execute('DELETE FROM users WHERE id = ?', [id]);
+    securityLog('user_deleted', { actorId: req.user.id, userId: id });
     setFlash(req, 'sukses', `Akun "${user.nama}" telah dihapus.`);
     res.redirect('/admin/pengguna');
   } catch (error) {

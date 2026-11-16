@@ -3,7 +3,7 @@
 const express = require('express');
 const { pool, query, queryOne, withTransaction } = require('../db');
 const { requireAuth, requireRole } = require('../auth');
-const { setFlash, whatsappUrl, loanState } = require('../helpers');
+const { setFlash, whatsappUrl, loanState, parseId } = require('../helpers');
 
 const router = express.Router();
 
@@ -119,8 +119,8 @@ router.get('/', requireAuth, async (req, res, next) => {
 
 router.get('/buku/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = Number.parseInt(req.params.id, 10);
-    if (!Number.isInteger(id)) return next();
+    const id = parseId(req.params.id);
+    if (id === null) return next();
 
     const book = await queryOne(
       `SELECT b.*, c.nama AS kategori,
@@ -190,7 +190,8 @@ router.get('/buku/:id', requireAuth, async (req, res, next) => {
 
 /** Pinjam buku: transaksi dengan penguncian baris agar stok tidak bisa minus. */
 router.post('/buku/:id/pinjam', requireRole('anggota'), async (req, res, next) => {
-  const bookId = Number.parseInt(req.params.id, 10);
+  const bookId = parseId(req.params.id);
+  if (bookId === null) return next();
   const backTo = `/buku/${bookId}`;
 
   try {
@@ -277,7 +278,8 @@ router.get('/pinjaman-saya', requireAuth, async (req, res, next) => {
 
 /** Kembalikan buku milik sendiri (atau oleh petugas/admin melalui rute yang sama). */
 router.post('/pinjaman/:id/kembalikan', requireAuth, async (req, res, next) => {
-  const loanId = Number.parseInt(req.params.id, 10);
+  const loanId = parseId(req.params.id);
+  if (loanId === null) return next();
 
   try {
     const result = await withTransaction(async (connection) => {

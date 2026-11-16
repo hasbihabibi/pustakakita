@@ -17,6 +17,14 @@ const DEFAULT_SETTINGS = {
   alamat: 'Jl. Pendidikan No. 17, Yogyakarta',
 };
 
+/** Id numerik dari parameter rute; null bila bukan bilangan bulat positif. */
+function parseId(value) {
+  const raw = String(value ?? '');
+  if (!/^\d{1,10}$/.test(raw)) return null;
+  const id = Number(raw);
+  return id > 0 ? id : null;
+}
+
 function coverTheme(name) {
   return COVER_THEMES[name] || COVER_THEMES.laut;
 }
@@ -111,6 +119,7 @@ module.exports = {
   DEFAULT_SETTINGS,
   coverTheme,
   coverStyle,
+  parseId,
   formatDate,
   daysUntil,
   loanState,

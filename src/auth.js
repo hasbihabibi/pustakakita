@@ -2,6 +2,7 @@
 
 const crypto = require('node:crypto');
 const { queryOne } = require('./db');
+const { securityLog } = require('./security-log');
 
 const SCRYPT_KEYLEN = 64;
 const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1 };
@@ -21,6 +22,15 @@ function verifyPassword(password, stored) {
   const expected = Buffer.from(expectedHex, 'hex');
   const actual = crypto.scryptSync(password, salt, expected.length, SCRYPT_OPTIONS);
   return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+}
+
+/** Hash tiruan agar email yang tidak terdaftar tetap memakan waktu verifikasi yang sama. */
+const TIMING_HASH = hashPassword('timing-equalizer-pustakakita');
+
+function verifyPasswordForUser(password, user) {
+  const hash = user && user.password_hash ? user.password_hash : TIMING_HASH;
+  const match = verifyPassword(password, hash);
+  return Boolean(user) && match;
 }
 
 /** Middleware: muat ulang data pengguna dari DB agar perubahan peran/status langsung berlaku. */
@@ -63,6 +73,11 @@ function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return res.redirect('/login');
     if (!roles.includes(req.user.role)) {
+      securityLog('access_denied', {
+        path: req.originalUrl,
+        role: req.user.role,
+        required: roles.join('|'),
+      });
       res.status(403);
       return res.render('errors/403', {
         title: 'Akses ditolak',
@@ -102,6 +117,7 @@ function csrfProtection(req, res, next) {
 module.exports = {
   hashPassword,
   verifyPassword,
+  verifyPasswordForUser,
   loadUser,
   requireAuth,
   requireRole,

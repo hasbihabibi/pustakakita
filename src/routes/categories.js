@@ -4,7 +4,8 @@ const express = require('express');
 const { pool, query, queryOne } = require('../db');
 const { requireRole } = require('../auth');
 const { Validator } = require('../validate');
-const { setFlash } = require('../helpers');
+const { setFlash, parseId } = require('../helpers');
+const { securityLog } = require('../security-log');
 
 const router = express.Router();
 
@@ -69,7 +70,7 @@ router.post('/kelola/kategori', async (req, res, next) => {
 });
 
 router.post('/kelola/kategori/:id', async (req, res, next) => {
-  const id = Number.parseInt(req.params.id, 10);
+  const id = parseId(req.params.id);
   const v = new Validator(req.body);
   const nama = v.string('nama', 'Nama kategori', { min: 2, max: 60 });
   const deskripsi = v.string('deskripsi', 'Deskripsi', { min: 0, max: 255, required: false });
@@ -99,7 +100,7 @@ router.post('/kelola/kategori/:id', async (req, res, next) => {
 });
 
 router.post('/kelola/kategori/:id/hapus', async (req, res, next) => {
-  const id = Number.parseInt(req.params.id, 10);
+  const id = parseId(req.params.id);
 
   try {
     const category = await queryOne('SELECT id, nama FROM categories WHERE id = ?', [id]);
@@ -119,6 +120,7 @@ router.post('/kelola/kategori/:id/hapus', async (req, res, next) => {
     }
 
     await pool.execute('DELETE FROM categories WHERE id = ?', [id]);
+    securityLog('category_deleted', { actorId: req.user.id, categoryId: id });
     setFlash(req, 'sukses', `Kategori "${category.nama}" telah dihapus.`);
     res.redirect('/kelola/kategori');
   } catch (error) {

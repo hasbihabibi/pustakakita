@@ -4,7 +4,8 @@ const express = require('express');
 const { pool, query, queryOne, withTransaction } = require('../db');
 const { requireRole } = require('../auth');
 const { Validator } = require('../validate');
-const { setFlash, COVER_THEMES } = require('../helpers');
+const { setFlash, COVER_THEMES, parseId } = require('../helpers');
+const { securityLog } = require('../security-log');
 
 const router = express.Router();
 
@@ -232,7 +233,7 @@ router.post('/kelola/buku', async (req, res, next) => {
 
 router.get('/kelola/buku/:id/edit', async (req, res, next) => {
   try {
-    const book = await queryOne('SELECT * FROM books WHERE id = ?', [Number.parseInt(req.params.id, 10)]);
+    const book = await queryOne('SELECT * FROM books WHERE id = ?', [parseId(req.params.id)]);
     if (!book) {
       res.status(404);
       return res.render('errors/404', { title: 'Buku tidak ditemukan', active: 'buku' });
@@ -253,7 +254,7 @@ router.get('/kelola/buku/:id/edit', async (req, res, next) => {
 });
 
 router.post('/kelola/buku/:id', async (req, res, next) => {
-  const id = Number.parseInt(req.params.id, 10);
+  const id = parseId(req.params.id);
   const { isValid, errors, data } = validateBook(req.body);
 
   try {
@@ -323,7 +324,7 @@ router.post('/kelola/buku/:id', async (req, res, next) => {
 });
 
 router.post('/kelola/buku/:id/hapus', async (req, res, next) => {
-  const id = Number.parseInt(req.params.id, 10);
+  const id = parseId(req.params.id);
 
   try {
     const book = await queryOne('SELECT id, judul FROM books WHERE id = ?', [id]);
@@ -343,6 +344,7 @@ router.post('/kelola/buku/:id/hapus', async (req, res, next) => {
     }
 
     await pool.execute('DELETE FROM books WHERE id = ?', [id]);
+    securityLog('book_deleted', { actorId: req.user.id, bookId: id });
     setFlash(req, 'sukses', `Buku "${book.judul}" telah dihapus.`);
     res.redirect('/kelola/buku');
   } catch (error) {

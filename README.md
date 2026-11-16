@@ -83,6 +83,8 @@ src/
   db.js                   Connection pool + helper transaksi
   auth.js                 Hash scrypt, middleware sesi/peran, CSRF
   session-store.js        Session store berbasis MySQL
+  rate-limit.js           Pembatas login/pendaftaran (per akun & per IP)
+  security-log.js         Log peristiwa keamanan (JSON) untuk monitoring
   validate.js             Validator form
   helpers.js              Format tanggal, sampul, tautan WhatsApp, flash
   settings.js             Pengaturan perpustakaan (cache 30 detik)
@@ -92,11 +94,34 @@ scripts/db-setup.js       Pembuat database + seed data
 scripts/seed-data.js      Data dummy (buku, kategori, pengguna, pinjaman, ulasan)
 views/                    Template EJS (layout, katalog, kelola, admin)
 public/                   styles.css, app.js
+docs/PENTEST.md           Laporan uji penetrasi OWASP Top 10 + status perbaikan
 ```
+
+## Keamanan
+
+Aplikasi diuji dengan pendekatan OWASP Top 10; laporan lengkap (temuan, bukti, status
+perbaikan, risiko residual) ada di [`docs/PENTEST.md`](docs/PENTEST.md). Ringkasnya:
+
+- Kontrol akses per peran dipusatkan di `requireRole` (403 + log), dan seluruh form POST
+  memakai CSRF token per sesi.
+- Semua query memakai prepared statement; template EJS meng-escape keluaran (`<%= %>`),
+  dan parameter id rute divalidasi ketat (`parseId`).
+- Header: CSP, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`,
+  `Cross-Origin-Opener-Policy`; HSTS otomatis saat produksi.
+- Halaman dinamis memakai `Cache-Control: no-store`; aset statis tetap dapat di-cache.
+- Rate limit login (8/15 menit per email + 40/10 menit per IP) dan pendaftaran
+  (10/jam per IP), dengan log peristiwa keamanan tanpa data sensitif.
+- Produksi wajib mengisi `SESSION_SECRET` (server menolak start tanpa itu), cookie sesi
+  `Secure`, dan `TRUST_PROXY` sesuai jumlah hop proxy.
 
 ## Catatan produksi
 
-- Set `NODE_ENV=production` agar cookie sesi memakai flag `Secure` (jalankan di belakang HTTPS).
-- Ganti `SESSION_SECRET` dengan nilai acak panjang, dan ganti kata sandi akun demo.
+- Set `NODE_ENV=production` agar cookie sesi memakai flag `Secure`, HSTS aktif, dan
+  detail error tidak ditampilkan (jalankan di belakang HTTPS).
+- `SESSION_SECRET` wajib diisi nilai acak panjang; aplikasi menolak start tanpanya.
+  Ganti juga kata sandi akun demo dan gunakan akun MySQL dengan hak akses terbatas.
+- Atur `TRUST_PROXY` (mis. `1` di Vercel/nginx) agar `req.ip` dan rate limit akurat.
+- Teruskan log `[security] ...` ke agregator dan buat alarm untuk lonjakan
+  `login_failed`/`access_denied`; jalankan `npm audit` secara rutin.
 - Backup rutin database; seluruh data aplikasi berada di MySQL.
 - `npm run db:setup` tidak menimpa data yang sudah ada; gunakan `db:reset` secara sadar.
