@@ -1,0 +1,20 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: pustakakita-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: pustakakita
+    ports:
+      - "3307:3306"
+    volumes:
+      - pustakakita-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-prootpw"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pustakakita-db:

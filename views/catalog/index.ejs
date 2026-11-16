@@ -1,0 +1,133 @@
+<%- include('../partials/header') %>
+
+<section class="hero">
+  <h1>Temukan bacaan tepat, lebih mudah dan lebih cepat.</h1>
+  <p>
+    Jelajahi <%= summary.total_judul %> judul koleksi perpustakaan. Cek ketersediaan eksemplar secara langsung,
+    pinjam buku, dan beri rating setelah selesai membaca.
+  </p>
+  <div class="hero-tags">
+    <span><%= summary.total_judul %> judul buku</span>
+    <span><%= summary.total_eksemplar %> eksemplar</span>
+    <span><%= summary.total_tersedia %> siap dipinjam</span>
+    <span>Gratis, tanpa biaya pinjam</span>
+  </div>
+</section>
+
+<form class="filter-bar" method="get" action="/" role="search">
+  <div class="filter-fields">
+    <div class="field search">
+      <label class="label" for="q">Cari koleksi</label>
+      <input class="input" id="q" name="q" type="search" value="<%= filters.q %>"
+             placeholder="Judul, penulis, kode buku...">
+    </div>
+
+    <div class="field">
+      <label class="label" for="kategori">Kategori</label>
+      <select class="select" id="kategori" name="kategori">
+        <option value="">Semua kategori</option>
+        <% categories.forEach(function (c) { %>
+          <option value="<%= c.id %>" <%= filters.kategori === c.id ? 'selected' : '' %>><%= c.nama %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="label" for="sort">Urutkan</label>
+      <select class="select" id="sort" name="sort">
+        <% sorts.forEach(function (s) { %>
+          <option value="<%= s[0] %>" <%= filters.sort === s[0] ? 'selected' : '' %>><%= s[1] %></option>
+        <% }); %>
+      </select>
+    </div>
+  </div>
+
+  <div class="filter-actions">
+    <div class="filter-toggles">
+      <label class="checkbox-row">
+        <input type="checkbox" name="unggulan" value="1" <%= filters.unggulan ? 'checked' : '' %>>
+        <span>Unggulan saja</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" name="tersedia" value="1" <%= filters.tersedia ? 'checked' : '' %>>
+        <span>Hanya yang tersedia</span>
+      </label>
+    </div>
+    <span class="spacer"></span>
+    <button class="btn btn-primary" type="submit">Terapkan</button>
+    <a class="btn btn-outline" href="/">Reset</a>
+  </div>
+</form>
+
+<p class="result-line">
+  Menampilkan <strong><%= books.length %></strong> buku<% if (filters.q) { %> untuk pencarian “<%= filters.q %>”<% } %><% if (filters.kategori) { %> pada kategori terpilih<% } %>.
+</p>
+
+<% if (books.length === 0) { %>
+  <div class="card empty-state">
+    <div class="empty-icon">🔍</div>
+    <h3>Tidak ada buku yang cocok</h3>
+    <p class="small">Coba ubah kata kunci, kategori, atau matikan filter yang aktif.</p>
+    <a class="btn btn-outline mt-2" href="/">Reset pencarian</a>
+  </div>
+<% } else { %>
+  <div class="book-grid">
+    <% books.forEach(function (book) { %>
+      <% const pinjamanAktif = activeByBook.get(book.id); %>
+      <article class="book-card">
+        <a href="/buku/<%= book.id %>" style="display:block;">
+          <%- include('../partials/book-cover', { book: book }) %>
+        </a>
+        <div class="book-body">
+          <span class="book-kategori"><%= book.kategori %></span>
+          <a class="book-title" href="/buku/<%= book.id %>"><%= book.judul %></a>
+          <p class="book-desc"><%= book.deskripsi %></p>
+
+          <div class="book-meta">
+            <span class="rating-inline">
+              ★ <%= Number(book.rata_rata).toFixed(1) %>
+              <span class="muted">(<%= book.jumlah_ulasan %>)</span>
+            </span>
+            <% if (book.stok_tersedia > 0) { %>
+              <span class="badge badge-sukses">Tersedia <%= book.stok_tersedia %> eks</span>
+            <% } else { %>
+              <span class="badge badge-bahaya">Stok habis</span>
+            <% } %>
+          </div>
+
+          <div class="book-foot">
+            <% if (role === 'anggota') { %>
+              <% if (pinjamanAktif) { %>
+                <a class="btn btn-outline btn-sm btn-block" href="/pinjaman-saya">Sedang Anda pinjam</a>
+              <% } else if (book.stok_tersedia > 0) { %>
+                <form method="post" action="/buku/<%= book.id %>/pinjam">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="btn btn-primary btn-sm btn-block" type="submit">Pinjam buku</button>
+                </form>
+              <% } else { %>
+                <button class="btn btn-primary btn-sm btn-block" type="button" disabled>Stok habis</button>
+              <% } %>
+            <% } else { %>
+              <a class="btn btn-outline btn-sm btn-block" href="/kelola/buku/<%= book.id %>/edit">Kelola buku</a>
+            <% } %>
+          </div>
+        </div>
+      </article>
+    <% }); %>
+  </div>
+<% } %>
+
+<% if (role === 'anggota') { %>
+  <div class="wa-card mt-3">
+    <div>
+      <h3>Butuh bantuan petugas?</h3>
+      <p>Hubungi admin perpustakaan via WhatsApp pada <%= settings.jam_layanan %>.</p>
+    </div>
+    <a class="btn" target="_blank" rel="noopener"
+       href="<%= whatsappUrl(settings.admin_whatsapp, 'Halo Admin ' + settings.nama_perpustakaan + ', saya ' + currentUser.nama + ' (' + (currentUser.no_anggota || '-') + ') ingin bertanya tentang koleksi buku.') %>">
+      Chat Admin
+    </a>
+  </div>
+<% } %>
+
+<%- include('../partials/footer') %>

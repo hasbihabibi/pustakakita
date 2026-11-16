@@ -1,0 +1,121 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <div>
+    <h1>Kelola Buku</h1>
+    <p class="lede">Tambah, ubah, dan hapus koleksi. Stok tersedia berkurang otomatis setiap ada peminjaman.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline" href="/kelola/kategori">Kelola kategori</a>
+    <a class="btn btn-primary" href="/kelola/buku/baru">Tambah buku</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total judul</div>
+    <div class="stat-value"><%= stats.total_judul %></div>
+    <div class="stat-hint">judul terdaftar</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Total eksemplar</div>
+    <div class="stat-value"><%= stats.total_eksemplar %></div>
+    <div class="stat-hint">seluruh stok fisik</div>
+  </div>
+  <div class="stat-card accent">
+    <div class="stat-label">Tersedia di rak</div>
+    <div class="stat-value"><%= stats.tersedia %></div>
+    <div class="stat-hint">siap dipinjam</div>
+  </div>
+</div>
+
+<form class="filter-bar" method="get" action="/kelola/buku">
+  <div class="filter-fields">
+    <div class="field search">
+      <label class="label" for="q">Cari buku</label>
+      <input class="input" id="q" name="q" type="search" value="<%= filters.q %>" placeholder="Judul, kode, atau penulis...">
+    </div>
+    <div class="field">
+      <label class="label" for="kategori">Kategori</label>
+      <select class="select" id="kategori" name="kategori">
+        <option value="">Semua kategori</option>
+        <% categories.forEach(function (c) { %>
+          <option value="<%= c.id %>" <%= filters.kategori === c.id ? 'selected' : '' %>><%= c.nama %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="field">
+      <label class="label">Status stok</label>
+      <label class="checkbox-row" style="padding: 9px 0;">
+        <input type="checkbox" name="habis" value="1" <%= filters.habis ? 'checked' : '' %>>
+        <span>Hanya stok habis</span>
+      </label>
+    </div>
+  </div>
+  <div class="filter-actions">
+    <span class="spacer"></span>
+    <button class="btn btn-primary" type="submit">Terapkan</button>
+    <a class="btn btn-outline" href="/kelola/buku">Reset</a>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-body tight">
+    <% if (books.length === 0) { %>
+      <div class="empty-state">
+        <div class="empty-icon">📕</div>
+        <h3>Tidak ada buku pada filter ini</h3>
+        <p class="small">Ubah filter atau tambahkan buku baru.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Kode</th>
+              <th>Judul &amp; penulis</th>
+              <th>Kategori</th>
+              <th class="num">Stok</th>
+              <th class="num">Dipinjam</th>
+              <th>Status</th>
+              <th class="text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% books.forEach(function (book) { %>
+              <tr>
+                <td class="nowrap"><strong><%= book.kode %></strong></td>
+                <td>
+                  <div style="font-weight:600; color:var(--ink);"><%= book.judul %></div>
+                  <div class="small muted"><%= book.penulis %><%= book.tahun_terbit ? ' · ' + book.tahun_terbit : '' %></div>
+                </td>
+                <td class="nowrap small"><%= book.kategori %></td>
+                <td class="num nowrap"><strong><%= book.stok_tersedia %></strong> / <%= book.stok_total %></td>
+                <td class="num nowrap"><%= book.dipinjam %></td>
+                <td class="nowrap">
+                  <% if (book.stok_tersedia === 0) { %>
+                    <span class="badge badge-bahaya">Stok habis</span>
+                  <% } else { %>
+                    <span class="badge badge-sukses">Tersedia</span>
+                  <% } %>
+                  <% if (book.unggulan) { %><span class="badge badge-terra">Unggulan</span><% } %>
+                </td>
+                <td>
+                  <div class="table-actions">
+                    <a class="btn btn-sm btn-outline" href="/kelola/buku/<%= book.id %>/edit">Edit</a>
+                    <form method="post" action="/kelola/buku/<%= book.id %>/hapus" data-confirm="Hapus buku &quot;<%= book.judul %>&quot;? Tindakan ini tidak dapat dibatalkan.">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn btn-sm btn-danger" type="submit">Hapus</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

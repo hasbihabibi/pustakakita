@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar Akun — <%= settings.nama_perpustakaan %></title>
+  <meta name="description" content="Daftar akun anggota PustakaKita untuk meminjam buku dan memberi rating secara gratis.">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="auth-page">
+  <section class="auth-visual">
+    <%- include('../partials/auth-visual') %>
+  </section>
+
+  <section class="auth-form-wrap">
+    <div class="auth-form">
+      <h2>Daftar akun anggota</h2>
+      <p class="sub">Gratis. Setelah mendaftar Anda langsung bisa meminjam buku dan memberi rating.</p>
+
+      <% if (typeof flash !== 'undefined' && flash) { %>
+        <div class="alert alert-<%= flash.type %>"><span><%= flash.message %></span></div>
+      <% } %>
+      <% if (errors.umum) { %>
+        <div class="alert alert-galat"><span><%= errors.umum %></span></div>
+      <% } %>
+
+      <form method="post" action="/daftar" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="field">
+          <label class="label" for="nama">Nama lengkap</label>
+          <input class="input <%= errors.nama ? 'is-invalid' : '' %>" id="nama" name="nama" maxlength="120"
+                 value="<%= values.nama || '' %>" autocomplete="name" required autofocus>
+          <% if (errors.nama) { %><span class="error-text"><%= errors.nama %></span><% } %>
+        </div>
+
+        <div class="field">
+          <label class="label" for="email">Email</label>
+          <input class="input <%= errors.email ? 'is-invalid' : '' %>" id="email" name="email" type="email" maxlength="160"
+                 value="<%= values.email || '' %>" autocomplete="username" required>
+          <% if (errors.email) { %><span class="error-text"><%= errors.email %></span><% } %>
+        </div>
+
+        <div class="form-grid form-grid-tight">
+          <div class="field">
+            <label class="label" for="telepon">Nomor WhatsApp</label>
+            <input class="input <%= errors.telepon ? 'is-invalid' : '' %>" id="telepon" name="telepon" maxlength="25"
+                   value="<%= values.telepon || '' %>" placeholder="081234567890" autocomplete="tel">
+            <% if (errors.telepon) { %><span class="error-text"><%= errors.telepon %></span><% } %>
+          </div>
+
+          <div class="field">
+            <label class="label" for="alamat">Alamat</label>
+            <input class="input <%= errors.alamat ? 'is-invalid' : '' %>" id="alamat" name="alamat" maxlength="255"
+                   value="<%= values.alamat || '' %>" placeholder="Kota domisili" autocomplete="street-address">
+            <% if (errors.alamat) { %><span class="error-text"><%= errors.alamat %></span><% } %>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="password">Kata sandi</label>
+          <input class="input <%= errors.password ? 'is-invalid' : '' %>" id="password" name="password" type="password"
+                 autocomplete="new-password" minlength="8" required>
+          <span class="hint">Minimal 8 karakter, kombinasikan huruf dan angka.</span>
+          <% if (errors.password) { %><span class="error-text"><%= errors.password %></span><% } %>
+        </div>
+
+        <div class="field">
+          <label class="label" for="konfirmasi">Ulangi kata sandi</label>
+          <input class="input <%= errors.konfirmasi ? 'is-invalid' : '' %>" id="konfirmasi" name="konfirmasi"
+                 type="password" maxlength="200" autocomplete="new-password" required>
+          <% if (errors.konfirmasi) { %><span class="error-text"><%= errors.konfirmasi %></span><% } %>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block mt-2">Daftar dan masuk</button>
+      </form>
+
+      <p class="auth-switch">Sudah punya akun? <a href="/login">Masuk di sini</a></p>
+      <p class="auth-footnote">Nomor anggota dibuat otomatis oleh sistem setelah pendaftaran.</p>
+      <p class="auth-footnote">© <%= new Date().getFullYear() %> <%= settings.nama_perpustakaan %> · Layanan perpustakaan gratis</p>
+    </div>
+  </section>
+</div>
+</body>
+</html>

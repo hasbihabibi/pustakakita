@@ -1,0 +1,134 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <div>
+    <h1>Kelola Pengguna</h1>
+    <p class="lede">Atur akun admin, petugas perpustakaan, dan anggota. Akun yang dinonaktifkan tidak dapat masuk.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-primary" href="/admin/pengguna/baru">Tambah pengguna</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Administrator</div>
+    <div class="stat-value"><%= summary.admin || 0 %></div>
+    <div class="stat-hint">akun pengelola sistem</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Petugas</div>
+    <div class="stat-value"><%= summary.petugas || 0 %></div>
+    <div class="stat-hint">pengelola buku &amp; kategori</div>
+  </div>
+  <div class="stat-card accent">
+    <div class="stat-label">Anggota</div>
+    <div class="stat-value"><%= summary.anggota || 0 %></div>
+    <div class="stat-hint">peminjam buku</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="stat-label">Nonaktif</div>
+    <div class="stat-value"><%= summary.nonaktif || 0 %></div>
+    <div class="stat-hint">akun dinonaktifkan</div>
+  </div>
+</div>
+
+<form class="filter-bar" method="get" action="/admin/pengguna">
+  <div class="filter-fields">
+    <div class="field search">
+      <label class="label" for="q">Cari pengguna</label>
+      <input class="input" id="q" name="q" type="search" value="<%= filters.q %>" placeholder="Nama, email, atau nomor anggota...">
+    </div>
+    <div class="field">
+      <label class="label" for="role">Peran</label>
+      <select class="select" id="role" name="role">
+        <option value="">Semua peran</option>
+        <% roles.forEach(function (r) { %>
+          <option value="<%= r %>" <%= filters.role === r ? 'selected' : '' %>><%= roleLabel(r) %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="status">Status</label>
+      <select class="select" id="status" name="status">
+        <option value="">Semua status</option>
+        <option value="aktif" <%= filters.status === 'aktif' ? 'selected' : '' %>>Aktif</option>
+        <option value="nonaktif" <%= filters.status === 'nonaktif' ? 'selected' : '' %>>Nonaktif</option>
+      </select>
+    </div>
+  </div>
+  <div class="filter-actions">
+    <span class="spacer"></span>
+    <button class="btn btn-primary" type="submit">Terapkan</button>
+    <a class="btn btn-outline" href="/admin/pengguna">Reset</a>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-body tight">
+    <% if (users.length === 0) { %>
+      <div class="empty-state">
+        <div class="empty-icon">👥</div>
+        <h3>Tidak ada pengguna yang cocok</h3>
+        <p class="small">Ubah kata kunci atau filter peran.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Kontak</th>
+              <th>Peran</th>
+              <th>Status</th>
+              <th class="num">Pinjam aktif</th>
+              <th class="text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users.forEach(function (user) { %>
+              <tr>
+                <td>
+                  <div style="font-weight:600; color:var(--ink);"><%= user.nama %><%= user.id === currentUser.id ? ' (Anda)' : '' %></div>
+                  <div class="small muted"><%= user.no_anggota || '—' %></div>
+                </td>
+                <td>
+                  <div class="small"><%= user.email %></div>
+                  <div class="small muted"><%= user.telepon || '—' %></div>
+                </td>
+                <td class="nowrap">
+                  <span class="badge <%= user.role === 'admin' ? 'badge-terra' : (user.role === 'petugas' ? 'badge-info' : 'badge-netral') %>">
+                    <%= roleLabel(user.role) %>
+                  </span>
+                </td>
+                <td class="nowrap">
+                  <span class="badge <%= user.status === 'aktif' ? 'badge-sukses' : 'badge-bahaya' %>">
+                    <%= user.status === 'aktif' ? 'Aktif' : 'Nonaktif' %>
+                  </span>
+                </td>
+                <td class="num nowrap"><%= user.pinjaman_aktif %><span class="muted small"> / <%= user.total_pinjaman %></span></td>
+                <td>
+                  <div class="table-actions">
+                    <a class="btn btn-sm btn-outline" href="/admin/pengguna/<%= user.id %>/edit">Edit</a>
+                    <% if (user.id !== currentUser.id) { %>
+                      <form method="post" action="/admin/pengguna/<%= user.id %>/status">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button class="btn btn-sm btn-ghost" type="submit"><%= user.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' %></button>
+                      </form>
+                      <form method="post" action="/admin/pengguna/<%= user.id %>/hapus" data-confirm="Hapus akun &quot;<%= user.nama %>&quot; secara permanen?">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button class="btn btn-sm btn-danger" type="submit">Hapus</button>
+                      </form>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,8 @@
+<div class="book-cover" style="<%= coverStyle(book.cover_theme) %>">
+  <% if (book.unggulan) { %><span class="cover-flag">Unggulan</span><% } %>
+  <span class="cover-kode"><%= book.kode %></span>
+  <div>
+    <div class="cover-judul"><%= book.judul %></div>
+    <div class="cover-penulis"><%= book.penulis %></div>
+  </div>
+</div>

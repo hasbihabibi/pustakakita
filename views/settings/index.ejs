@@ -1,0 +1,71 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <div>
+    <h1>Pengaturan Perpustakaan</h1>
+    <p class="lede">Identitas dan kontak layanan. Nomor WhatsApp dipakai tombol “Hubungi Admin” pada halaman anggota.</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <form method="post" action="/admin/pengaturan" class="card" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="card-head"><h2>Identitas &amp; kontak</h2></div>
+    <div class="card-body">
+      <div class="field mb-2">
+        <label class="label" for="nama">Nama perpustakaan</label>
+        <input class="input <%= errors.nama_perpustakaan ? 'is-invalid' : '' %>" id="nama" name="nama_perpustakaan"
+               maxlength="80" value="<%= values.nama_perpustakaan %>" required>
+        <% if (errors.nama_perpustakaan) { %><span class="error-text"><%= errors.nama_perpustakaan %></span><% } %>
+      </div>
+
+      <div class="field mb-2">
+        <label class="label" for="wa">Nomor WhatsApp admin</label>
+        <input class="input <%= errors.admin_whatsapp ? 'is-invalid' : '' %>" id="wa" name="admin_whatsapp"
+               maxlength="20" value="<%= values.admin_whatsapp %>" placeholder="6281234567890" required>
+        <span class="hint">Format internasional tanpa tanda +, misalnya 6281234567890.</span>
+        <% if (errors.admin_whatsapp) { %><span class="error-text"><%= errors.admin_whatsapp %></span><% } %>
+      </div>
+
+      <div class="field mb-2">
+        <label class="label" for="jam">Jam layanan</label>
+        <input class="input <%= errors.jam_layanan ? 'is-invalid' : '' %>" id="jam" name="jam_layanan"
+               maxlength="120" value="<%= values.jam_layanan %>" required>
+        <% if (errors.jam_layanan) { %><span class="error-text"><%= errors.jam_layanan %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="alamat">Alamat</label>
+        <input class="input <%= errors.alamat ? 'is-invalid' : '' %>" id="alamat" name="alamat"
+               maxlength="255" value="<%= values.alamat %>" required>
+        <% if (errors.alamat) { %><span class="error-text"><%= errors.alamat %></span><% } %>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Simpan pengaturan</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="card">
+    <div class="card-head"><h2>Pratinjau tombol WhatsApp</h2></div>
+    <div class="card-body">
+      <p class="small muted mb-2">Tautan ini yang dilihat anggota pada katalog dan halaman pinjaman.</p>
+      <div class="wa-card" style="flex-direction:column; align-items:flex-start;">
+        <div>
+          <h3>Butuh bantuan petugas?</h3>
+          <p>Chat admin pada <%= values.jam_layanan %>.</p>
+        </div>
+        <a class="btn" target="_blank" rel="noopener"
+           href="<%= whatsappUrl(values.admin_whatsapp, 'Halo Admin ' + values.nama_perpustakaan + ', saya ingin bertanya.') %>">
+          Chat Admin
+        </a>
+      </div>
+      <p class="small muted mt-2">
+        Alamat: <%= values.alamat %>
+      </p>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

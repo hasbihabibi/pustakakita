@@ -1,0 +1,110 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <div>
+    <h1>Kelola Kategori</h1>
+    <p class="lede">Kategori dipakai sebagai filter katalog. Kategori yang masih memiliki buku tidak dapat dihapus.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline" href="/kelola/buku">Kelola buku</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-head"><h2>Tambah kategori</h2></div>
+    <div class="card-body">
+      <form method="post" action="/kelola/kategori" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field mb-2">
+          <label class="label" for="nama">Nama kategori</label>
+          <input class="input <%= errors.nama ? 'is-invalid' : '' %>" id="nama" name="nama" maxlength="60"
+                 value="<%= values.nama || '' %>" placeholder="Misal: Filsafat & Pemikiran" required>
+          <% if (errors.nama) { %><span class="error-text"><%= errors.nama %></span><% } %>
+        </div>
+        <div class="field">
+          <label class="label" for="deskripsi">Deskripsi</label>
+          <input class="input" id="deskripsi" name="deskripsi" maxlength="255" value="<%= values.deskripsi || '' %>"
+                 placeholder="Ringkasan singkat isi kategori (opsional)">
+          <% if (errors.deskripsi) { %><span class="error-text"><%= errors.deskripsi %></span><% } %>
+        </div>
+        <button class="btn btn-primary mt-2" type="submit">Tambah kategori</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Ringkasan</h2>
+      <span class="badge badge-netral"><%= categories.length %> kategori</span>
+    </div>
+    <div class="card-body">
+      <p class="small muted">
+        Total buku terkelompok: <strong><%= categories.reduce(function (sum, c) { return sum + Number(c.jumlah_buku); }, 0) %></strong>
+        dari <strong><%= categories.length %></strong> kategori aktif.
+      </p>
+      <table class="table mt-2">
+        <thead><tr><th>Kategori</th><th class="num">Buku</th></tr></thead>
+        <tbody>
+          <% categories.forEach(function (c) { %>
+            <tr><td><%= c.nama %></td><td class="num"><%= c.jumlah_buku %></td></tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-head"><h2>Daftar kategori</h2></div>
+  <div class="card-body tight">
+    <% if (categories.length === 0) { %>
+      <div class="empty-state">
+        <div class="empty-icon">🗂️</div>
+        <h3>Belum ada kategori</h3>
+        <p class="small">Tambahkan kategori pertama melalui formulir di atas.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Deskripsi</th>
+              <th class="num">Buku</th>
+              <th class="text-right">Ubah</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% categories.forEach(function (c) { %>
+              <tr>
+                <td style="min-width:220px;">
+                  <form method="post" action="/kelola/kategori/<%= c.id %>" id="kategori-<%= c.id %>" style="display:flex; gap:6px;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input class="input" name="nama" value="<%= c.nama %>" maxlength="60" required aria-label="Nama kategori">
+                  </form>
+                </td>
+                <td style="min-width:260px;">
+                  <input class="input" name="deskripsi" form="kategori-<%= c.id %>" value="<%= c.deskripsi || '' %>"
+                         maxlength="255" aria-label="Deskripsi kategori">
+                </td>
+                <td class="num"><%= c.jumlah_buku %></td>
+                <td>
+                  <div class="table-actions">
+                    <button class="btn btn-sm btn-outline" type="submit" form="kategori-<%= c.id %>">Simpan</button>
+                    <form method="post" action="/kelola/kategori/<%= c.id %>/hapus" data-confirm="Hapus kategori &quot;<%= c.nama %>&quot;?">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn btn-sm btn-danger" type="submit" <%= Number(c.jumlah_buku) > 0 ? 'disabled title="Masih dipakai buku"' : '' %>>Hapus</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

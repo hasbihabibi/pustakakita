@@ -1,0 +1,120 @@
+<%- include('../partials/header') %>
+
+<p class="small muted mb-2"><a href="/kelola/buku">Kelola Buku</a> / <%= mode === 'create' ? 'Tambah buku' : 'Edit buku' %></p>
+
+<div class="page-head">
+  <div>
+    <h1><%= mode === 'create' ? 'Tambah Buku Baru' : 'Edit Buku' %></h1>
+    <p class="lede">
+      <% if (mode === 'create') { %>
+        Kode buku dibuat otomatis (format PK-123) bila dikosongkan.
+      <% } else { %>
+        Stok total tidak boleh lebih kecil dari jumlah eksemplar yang sedang dipinjam.
+      <% } %>
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline" href="/kelola/buku">Kembali</a>
+  </div>
+</div>
+
+<% if (errors.umum) { %>
+  <div class="alert alert-galat"><span><%= errors.umum %></span></div>
+<% } %>
+
+<form method="post" action="<%= mode === 'create' ? '/kelola/buku' : '/kelola/buku/' + book.id %>" class="card" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body">
+    <div class="form-grid">
+      <div class="field">
+        <label class="label" for="kode">Kode buku</label>
+        <input class="input <%= errors.kode ? 'is-invalid' : '' %>" id="kode" name="kode" maxlength="20"
+               value="<%= book.kode || '' %>" placeholder="PK-117">
+        <span class="hint">Kosongkan untuk dibuat otomatis.</span>
+        <% if (errors.kode) { %><span class="error-text"><%= errors.kode %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="kategori">Kategori</label>
+        <select class="select <%= errors.category_id ? 'is-invalid' : '' %>" id="kategori" name="category_id" required>
+          <option value="">Pilih kategori</option>
+          <% categories.forEach(function (c) { %>
+            <option value="<%= c.id %>" <%= String(book.category_id) === String(c.id) ? 'selected' : '' %>><%= c.nama %></option>
+          <% }); %>
+        </select>
+        <% if (errors.category_id) { %><span class="error-text"><%= errors.category_id %></span><% } %>
+      </div>
+
+      <div class="field span-2">
+        <label class="label" for="judul">Judul buku</label>
+        <input class="input <%= errors.judul ? 'is-invalid' : '' %>" id="judul" name="judul" maxlength="160"
+               value="<%= book.judul || '' %>" required>
+        <% if (errors.judul) { %><span class="error-text"><%= errors.judul %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="penulis">Penulis</label>
+        <input class="input <%= errors.penulis ? 'is-invalid' : '' %>" id="penulis" name="penulis" maxlength="120"
+               value="<%= book.penulis || '' %>" required>
+        <% if (errors.penulis) { %><span class="error-text"><%= errors.penulis %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="penerbit">Penerbit</label>
+        <input class="input" id="penerbit" name="penerbit" maxlength="120" value="<%= book.penerbit || '' %>">
+        <% if (errors.penerbit) { %><span class="error-text"><%= errors.penerbit %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="tahun">Tahun terbit</label>
+        <input class="input <%= errors.tahun_terbit ? 'is-invalid' : '' %>" id="tahun" name="tahun_terbit"
+               inputmode="numeric" maxlength="4" value="<%= book.tahun_terbit || '' %>" placeholder="2024">
+        <% if (errors.tahun_terbit) { %><span class="error-text"><%= errors.tahun_terbit %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="stok">Stok eksemplar</label>
+        <input class="input <%= errors.stok_total ? 'is-invalid' : '' %>" id="stok" name="stok_total"
+               inputmode="numeric" value="<%= book.stok_total %>" required>
+        <span class="hint">Bilangan bulat 0 – 1000.</span>
+        <% if (errors.stok_total) { %><span class="error-text"><%= errors.stok_total %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="tema">Tema sampul</label>
+        <select class="select" id="tema" name="cover_theme">
+          <% Object.keys(themes).forEach(function (key) { %>
+            <option value="<%= key %>" <%= book.cover_theme === key ? 'selected' : '' %>><%= themes[key].label %></option>
+          <% }); %>
+        </select>
+        <span class="hint">Sampul digambar lokal oleh aplikasi, bebas hak cipta.</span>
+      </div>
+
+      <div class="field">
+        <label class="label">Penanda koleksi</label>
+        <label class="checkbox-row" style="padding-top:6px;">
+          <input type="checkbox" name="unggulan" value="1" <%= Number(book.unggulan) ? 'checked' : '' %>>
+          <span>Jadikan koleksi unggulan</span>
+        </label>
+      </div>
+
+      <div class="field span-2">
+        <label class="label" for="deskripsi">Deskripsi</label>
+        <textarea class="textarea <%= errors.deskripsi ? 'is-invalid' : '' %>" id="deskripsi" name="deskripsi"
+                  maxlength="2000" required><%= book.deskripsi || '' %></textarea>
+        <span class="hint">10 – 2000 karakter. Ringkas dan informatif.</span>
+        <% if (errors.deskripsi) { %><span class="error-text"><%= errors.deskripsi %></span><% } %>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit"><%= mode === 'create' ? 'Simpan buku' : 'Simpan perubahan' %></button>
+      <a class="btn btn-outline" href="/kelola/buku">Batal</a>
+      <% if (mode === 'edit') { %>
+        <a class="btn btn-ghost" href="/buku/<%= book.id %>" style="margin-left:auto;">Lihat di katalog</a>
+      <% } %>
+    </div>
+  </div>
+</form>
+
+<%- include('../partials/footer') %>

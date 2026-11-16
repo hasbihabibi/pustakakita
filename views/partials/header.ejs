@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> — <%= settings.nama_perpustakaan %></title>
+  <meta name="description" content="Sistem katalog dan sirkulasi perpustakaan mini: pinjam buku, kelola koleksi, dan pantau sirkulasi.">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<% const r = role; %>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="monogram"><span>P</span><span>u</span><span>K</span></span>
+      <span class="brand-name"><%= settings.nama_perpustakaan %></span>
+      <span class="brand-sub">Katalog &amp; Sirkulasi Perpustakaan</span>
+    </div>
+
+    <div class="sidebar-section">Menu Utama</div>
+    <nav class="sidebar-nav" aria-label="Navigasi utama">
+      <a class="nav-link <%= active === 'katalog' ? 'active' : '' %>" href="/">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6.5A2.5 2.5 0 0 1 4 18.5V5"/><path d="M8 7h7M8 11h7"/></svg>
+        <span>Katalog Buku</span>
+      </a>
+
+      <% if (r === 'anggota') { %>
+        <a class="nav-link <%= active === 'pinjaman' ? 'active' : '' %>" href="/pinjaman-saya">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>
+          <span>Pinjaman Saya</span>
+        </a>
+      <% } %>
+
+      <% if (r === 'admin' || r === 'petugas') { %>
+        <a class="nav-link <%= active === 'dashboard' ? 'active' : '' %>" href="/dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h6v8H3zM9 3h6v18H9zM15 9h6v12h-6z"/></svg>
+          <span>Dashboard</span>
+        </a>
+
+        <div class="sidebar-section">Manajemen Koleksi</div>
+        <a class="nav-link <%= active === 'buku' ? 'active' : '' %>" href="/kelola/buku">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v16H4zM14 4h6v16h-6z"/><path d="M4 8h6M14 8h6"/></svg>
+          <span>Kelola Buku</span>
+        </a>
+        <a class="nav-link <%= active === 'kategori' ? 'active' : '' %>" href="/kelola/kategori">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+          <span>Kelola Kategori</span>
+        </a>
+      <% } %>
+
+      <% if (r === 'admin') { %>
+        <div class="sidebar-section">Administrasi</div>
+        <a class="nav-link <%= active === 'pengguna' ? 'active' : '' %>" href="/admin/pengguna">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11"/></svg>
+          <span>Kelola Pengguna</span>
+        </a>
+        <a class="nav-link <%= active === 'pengaturan' ? 'active' : '' %>" href="/admin/pengaturan">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.36.4.66.73.86"/></svg>
+          <span>Pengaturan</span>
+        </a>
+      <% } %>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <span class="avatar"><%= currentUser ? currentUser.nama.trim().charAt(0).toUpperCase() : '?' %></span>
+        <span class="user-meta">
+          <span class="user-name"><%= currentUser ? currentUser.nama : 'Tamu' %></span>
+          <span class="user-role"><%= roleLabel(r) %><%= currentUser && currentUser.no_anggota ? ' · ' + currentUser.no_anggota : '' %></span>
+        </span>
+      </div>
+      <% if (currentUser) { %>
+        <form method="post" action="/logout">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="btn btn-sm btn-outline btn-block">Keluar</button>
+        </form>
+      <% } else { %>
+        <a class="btn btn-sm btn-primary btn-block" href="/login">Masuk</a>
+      <% } %>
+    </div>
+  </aside>
+
+  <div class="content-wrap">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title"><%= title %></div>
+        <div class="topbar-sub"><%= settings.jam_layanan %></div>
+      </div>
+      <div class="topbar-actions">
+        <% if (r === 'anggota') { %>
+          <a class="btn btn-sm btn-outline" href="<%= whatsappUrl(settings.admin_whatsapp, 'Halo Admin ' + settings.nama_perpustakaan + ', saya ' + currentUser.nama + ' ingin bertanya.') %>" target="_blank" rel="noopener">Hubungi Admin (WhatsApp)</a>
+          <a class="btn btn-sm btn-primary" href="/pinjaman-saya">Pinjaman Saya</a>
+        <% } else { %>
+          <a class="btn btn-sm btn-outline" href="/">Lihat Katalog</a>
+          <% if (r === 'petugas' || r === 'admin') { %>
+            <a class="btn btn-sm btn-primary" href="/kelola/buku/baru">Tambah Buku</a>
+          <% } %>
+        <% } %>
+      </div>
+    </header>
+
+    <main class="page">
+      <% if (typeof flash !== 'undefined' && flash) { %>
+        <div class="alert alert-<%= flash.type %>" role="status">
+          <strong><%= flash.type === 'sukses' ? 'Berhasil.' : 'Perhatian.' %></strong>
+          <span><%= flash.message %></span>
+        </div>
+      <% } %>

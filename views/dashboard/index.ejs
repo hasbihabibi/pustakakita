@@ -1,0 +1,134 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <div>
+    <h1>Dashboard Perpustakaan</h1>
+    <p class="lede">Ringkasan inventaris dan sirkulasi <%= settings.nama_perpustakaan %>.</p>
+  </div>
+  <div class="page-actions">
+    <% if (role === 'admin') { %>
+      <a class="btn btn-outline" href="/admin/pengguna">Kelola pengguna</a>
+    <% } else { %>
+      <a class="btn btn-outline" href="/kelola/kategori">Kelola kategori</a>
+    <% } %>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total judul</div>
+    <div class="stat-value"><%= books.judul %></div>
+    <div class="stat-hint"><%= categories.total %> kategori aktif</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Total eksemplar</div>
+    <div class="stat-value"><%= books.eksemplar %></div>
+    <div class="stat-hint"><%= books.tersedia %> tersedia di rak</div>
+  </div>
+  <div class="stat-card accent">
+    <div class="stat-label">Pinjaman aktif</div>
+    <div class="stat-value"><%= loans.aktif || 0 %></div>
+    <div class="stat-hint"><%= loans.selesai || 0 %> transaksi selesai</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="stat-label">Terlambat</div>
+    <div class="stat-value"><%= loans.terlambat || 0 %></div>
+    <div class="stat-hint">melewati jatuh tempo</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Anggota aktif</div>
+    <div class="stat-value"><%= users.anggota_aktif || 0 %></div>
+    <div class="stat-hint">dari <%= users.total %> akun terdaftar</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Rating rata-rata</div>
+    <div class="stat-value"><%= Number(ratings.rata_rata).toFixed(1) %></div>
+    <div class="stat-hint"><%= ratings.total %> ulasan pembaca</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2>Peminjaman terbaru</h2>
+    <span class="badge badge-netral"><%= loans.total %> total</span>
+  </div>
+  <div class="card-body tight">
+    <% if (recentLoans.length === 0) { %>
+      <div class="empty-state" style="padding:32px 12px;">
+        <h3>Belum ada transaksi</h3>
+        <p class="small">Peminjaman akan tampil di sini setelah anggota meminjam buku.</p>
+      </div>
+    <% } else { %>
+      <ul class="dash-list">
+        <% recentLoans.forEach(function (loan) { %>
+          <li class="dash-row">
+            <div class="dash-row-main">
+              <span class="dash-row-title"><%= loan.judul %></span>
+              <span class="dash-row-sub"><%= loan.kode %> · <%= loan.peminjam %></span>
+              <span class="dash-row-sub">Jatuh tempo <%= formatDate(loan.tanggal_jatuh_tempo) %></span>
+            </div>
+            <div class="dash-row-side">
+              <span class="badge badge-<%= loan.state.tone %>"><%= loan.state.label %></span>
+            </div>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+</div>
+
+<div class="grid-2 mt-2">
+  <div class="card">
+    <div class="card-head"><h2>Jatuh tempo terdekat</h2></div>
+    <div class="card-body tight">
+      <% if (overdueSoon.length === 0) { %>
+        <div class="card-body"><p class="small muted">Tidak ada pinjaman yang jatuh tempo dalam 3 hari ke depan.</p></div>
+      <% } else { %>
+        <ul class="dash-list">
+          <% overdueSoon.forEach(function (loan) { %>
+            <% const sisa = daysUntil(loan.tanggal_jatuh_tempo); %>
+            <li class="dash-row">
+              <div class="dash-row-main">
+                <span class="dash-row-title"><%= loan.judul %></span>
+                <span class="dash-row-sub"><%= loan.peminjam %></span>
+              </div>
+              <div class="dash-row-side">
+                <span class="dash-row-sub"><%= formatDate(loan.tanggal_jatuh_tempo) %></span>
+                <% if (sisa !== null && sisa < 0) { %>
+                  <span class="badge badge-bahaya">Lewat <%= Math.abs(sisa) %> hari</span>
+                <% } else { %>
+                  <span class="badge badge-peringatan">H-<%= sisa %></span>
+                <% } %>
+              </div>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Paling banyak dipinjam</h2></div>
+    <div class="card-body tight">
+      <% if (topBooks.length === 0) { %>
+        <div class="card-body"><p class="small muted">Belum ada data peminjaman.</p></div>
+      <% } else { %>
+        <ul class="dash-list">
+          <% topBooks.forEach(function (book, index) { %>
+            <li class="dash-row">
+              <div class="dash-row-main">
+                <span class="dash-row-title"><%= index + 1 %>. <%= book.judul %></span>
+                <span class="dash-row-sub"><%= book.kode %></span>
+              </div>
+              <div class="dash-row-side">
+                <span class="badge badge-info"><%= book.jumlah_pinjam %>× dipinjam</span>
+              </div>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

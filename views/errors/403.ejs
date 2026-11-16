@@ -1,0 +1,10 @@
+<%- include('../partials/header') %>
+<div class="error-page">
+  <div>
+    <div class="error-code">403</div>
+    <h1><%= title %></h1>
+    <p><%= typeof detail !== 'undefined' && detail ? detail : 'Akun Anda tidak memiliki hak akses untuk halaman ini.' %></p>
+    <a class="btn btn-primary mt-2" href="/">Kembali ke katalog</a>
+  </div>
+</div>
+<%- include('../partials/footer') %>

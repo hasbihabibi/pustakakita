@@ -1,0 +1,11 @@
+<%- include('../partials/header') %>
+<div class="error-page">
+  <div>
+    <div class="error-code">500</div>
+    <h1>Terjadi kesalahan pada server</h1>
+    <p>Permintaan Anda tidak dapat diproses. Silakan coba lagi beberapa saat lagi.</p>
+    <% if (detail) { %><div class="error-detail"><%= detail %></div><% } %>
+    <a class="btn btn-primary mt-2" href="/">Kembali ke katalog</a>
+  </div>
+</div>
+<%- include('../partials/footer') %>

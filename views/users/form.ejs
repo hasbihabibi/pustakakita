@@ -1,0 +1,96 @@
+<%- include('../partials/header') %>
+
+<p class="small muted mb-2"><a href="/admin/pengguna">Kelola Pengguna</a> / <%= mode === 'create' ? 'Tambah pengguna' : 'Edit pengguna' %></p>
+
+<div class="page-head">
+  <div>
+    <h1><%= mode === 'create' ? 'Tambah Pengguna' : 'Edit Pengguna' %></h1>
+    <p class="lede">
+      <% if (mode === 'create') { %>
+        Nomor anggota dibuat otomatis untuk peran anggota perpustakaan.
+      <% } else { %>
+        Kosongkan kata sandi bila tidak ingin mengubahnya.
+      <% } %>
+    </p>
+  </div>
+  <div class="page-actions"><a class="btn btn-outline" href="/admin/pengguna">Kembali</a></div>
+</div>
+
+<% if (errors.umum) { %>
+  <div class="alert alert-galat"><span><%= errors.umum %></span></div>
+<% } %>
+
+<form method="post" action="<%= mode === 'create' ? '/admin/pengguna' : '/admin/pengguna/' + user.id %>" class="card" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body">
+    <div class="form-grid">
+      <div class="field">
+        <label class="label" for="nama">Nama lengkap</label>
+        <input class="input <%= errors.nama ? 'is-invalid' : '' %>" id="nama" name="nama" maxlength="120"
+               value="<%= user.nama || '' %>" required>
+        <% if (errors.nama) { %><span class="error-text"><%= errors.nama %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="email">Email</label>
+        <input class="input <%= errors.email ? 'is-invalid' : '' %>" id="email" name="email" type="email" maxlength="160"
+               value="<%= user.email || '' %>" required>
+        <% if (errors.email) { %><span class="error-text"><%= errors.email %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="role">Peran</label>
+        <select class="select" id="role" name="role">
+          <% roles.forEach(function (r) { %>
+            <option value="<%= r %>" <%= user.role === r ? 'selected' : '' %>><%= roleLabel(r) %></option>
+          <% }); %>
+        </select>
+        <span class="hint">Admin: kelola pengguna · Petugas: kelola buku &amp; kategori · Anggota: pinjam buku.</span>
+      </div>
+
+      <div class="field">
+        <label class="label" for="status">Status akun</label>
+        <select class="select" id="status" name="status">
+          <option value="aktif" <%= user.status === 'aktif' ? 'selected' : '' %>>Aktif</option>
+          <option value="nonaktif" <%= user.status === 'nonaktif' ? 'selected' : '' %>>Nonaktif</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="label" for="telepon">Nomor WhatsApp</label>
+        <input class="input <%= errors.telepon ? 'is-invalid' : '' %>" id="telepon" name="telepon" maxlength="25"
+               value="<%= user.telepon || '' %>" placeholder="081234567890">
+        <% if (errors.telepon) { %><span class="error-text"><%= errors.telepon %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="alamat">Alamat</label>
+        <input class="input" id="alamat" name="alamat" maxlength="255" value="<%= user.alamat || '' %>">
+        <% if (errors.alamat) { %><span class="error-text"><%= errors.alamat %></span><% } %>
+      </div>
+
+      <div class="field">
+        <label class="label" for="password"><%= mode === 'create' ? 'Kata sandi' : 'Kata sandi baru' %></label>
+        <input class="input <%= errors.password ? 'is-invalid' : '' %>" id="password" name="password" type="password"
+               autocomplete="new-password" <%= mode === 'create' ? 'required' : '' %>>
+        <span class="hint">Minimal 8 karakter.<%= mode === 'edit' ? ' Biarkan kosong bila tidak diubah.' : '' %></span>
+        <% if (errors.password) { %><span class="error-text"><%= errors.password %></span><% } %>
+      </div>
+
+      <% if (mode === 'edit') { %>
+        <div class="field">
+          <label class="label">Nomor anggota</label>
+          <input class="input" value="<%= user.no_anggota || '—' %>" disabled>
+          <span class="hint">Dibuat otomatis untuk peran anggota.</span>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit"><%= mode === 'create' ? 'Simpan pengguna' : 'Simpan perubahan' %></button>
+      <a class="btn btn-outline" href="/admin/pengguna">Batal</a>
+    </div>
+  </div>
+</form>
+
+<%- include('../partials/footer') %>

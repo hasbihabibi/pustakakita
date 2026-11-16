@@ -1,0 +1,24 @@
+{
+  "name": "pustakakita",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PustakaKita — sistem katalog dan sirkulasi perpustakaan mini dengan tiga peran pengguna (admin, petugas, anggota)",
+  "type": "commonjs",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "db:setup": "node scripts/db-setup.js",
+    "db:reset": "node scripts/db-setup.js --reset"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "mysql2": "^3.12.0"
+  }
+}

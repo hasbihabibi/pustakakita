@@ -1,0 +1,116 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <div>
+    <h1>Pinjaman Saya</h1>
+    <p class="lede">
+      Pinjaman aktif: <strong><%= aktif.length %></strong> dari maksimal <%= maksPinjaman %> buku.
+      Batas peminjaman 7 hari per buku. Kembalikan buku agar dapat meminjam judul lain.
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline" href="/">Cari buku lain</a>
+  </div>
+</div>
+
+<div class="card mb-2">
+  <div class="card-head">
+    <h2>Sedang dipinjam</h2>
+    <span class="badge badge-info"><%= aktif.length %> buku</span>
+  </div>
+  <div class="card-body">
+    <% if (aktif.length === 0) { %>
+      <div class="empty-state" style="padding:32px 12px;">
+        <div class="empty-icon">📚</div>
+        <h3>Belum ada pinjaman aktif</h3>
+        <p class="small">Pilih buku dari katalog lalu tekan “Pinjam buku”.</p>
+        <a class="btn btn-primary mt-2" href="/">Jelajahi katalog</a>
+      </div>
+    <% } else { %>
+      <div class="loan-list">
+        <% aktif.forEach(function (loan) { %>
+          <% const sisa = daysUntil(loan.tanggal_jatuh_tempo); %>
+          <div class="loan-item <%= loan.state.code %>">
+            <div class="loan-thumb">
+              <%- include('../partials/book-cover', { book: loan }) %>
+            </div>
+            <div class="loan-main">
+              <a class="loan-title" href="/buku/<%= loan.book_id %>"><%= loan.judul %></a>
+              <div class="loan-sub"><%= loan.kode %> · <%= loan.kategori %> · <%= loan.penulis %></div>
+              <div class="loan-meta">
+                <span>Dipinjam <b><%= formatDate(loan.tanggal_pinjam) %></b></span>
+                <span>Jatuh tempo <b><%= formatDate(loan.tanggal_jatuh_tempo) %></b></span>
+                <span>
+                  <% if (sisa !== null && sisa < 0) { %>
+                    <span class="badge badge-bahaya">Terlambat <%= Math.abs(sisa) %> hari</span>
+                  <% } else if (sisa !== null) { %>
+                    <span class="badge badge-info">Sisa <%= sisa %> hari</span>
+                  <% } %>
+                </span>
+              </div>
+            </div>
+            <div class="loan-actions">
+              <form method="post" action="/pinjaman/<%= loan.id %>/kembalikan">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn btn-primary btn-sm" type="submit">Kembalikan</button>
+              </form>
+              <a class="btn btn-ghost btn-sm" href="/buku/<%= loan.book_id %>">Lihat buku</a>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2>Riwayat selesai</h2>
+    <span class="badge badge-netral"><%= selesai.length %> transaksi</span>
+  </div>
+  <div class="card-body">
+    <% if (selesai.length === 0) { %>
+      <p class="small muted">Belum ada buku yang selesai dibaca.</p>
+    <% } else { %>
+      <div class="loan-list">
+        <% selesai.forEach(function (loan) { %>
+          <div class="loan-item selesai">
+            <div class="loan-thumb">
+              <%- include('../partials/book-cover', { book: loan }) %>
+            </div>
+            <div class="loan-main">
+              <a class="loan-title" href="/buku/<%= loan.book_id %>"><%= loan.judul %></a>
+              <div class="loan-sub"><%= loan.kode %> · <%= loan.kategori %></div>
+              <div class="loan-meta">
+                <span>Dipinjam <b><%= formatDate(loan.tanggal_pinjam) %></b></span>
+                <span>Dikembalikan <b><%= formatDate(loan.tanggal_kembali) %></b></span>
+                <% if (loan.rating_nilai) { %>
+                  <span>Rating Anda <b class="stars-display"><%= stars(loan.rating_nilai) %></b></span>
+                <% } else { %>
+                  <span class="badge badge-peringatan">Belum dinilai</span>
+                <% } %>
+              </div>
+            </div>
+            <div class="loan-actions">
+              <% if (loan.rating_nilai) { %>
+                <a class="btn btn-outline btn-sm" href="/buku/<%= loan.book_id %>#ulasan">Ubah rating</a>
+              <% } else { %>
+                <a class="btn btn-accent btn-sm" href="/buku/<%= loan.book_id %>#ulasan">Beri rating</a>
+              <% } %>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<div class="wa-card mt-3">
+  <div>
+    <h3>Ada kendala dengan pinjaman?</h3>
+    <p>Hubungi admin perpustakaan via WhatsApp. Layanan <%= settings.jam_layanan %>.</p>
+  </div>
+  <a class="btn" target="_blank" rel="noopener" href="<%= waUrl %>">Chat Admin via WhatsApp</a>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masuk — <%= settings.nama_perpustakaan %></title>
+  <meta name="description" content="Masuk ke akun PustakaKita untuk meminjam buku, mengelola koleksi, atau mengelola akun perpustakaan.">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="auth-page">
+  <section class="auth-visual">
+    <%- include('../partials/auth-visual') %>
+  </section>
+
+  <section class="auth-form-wrap">
+    <div class="auth-form">
+      <h2>Masuk ke akun</h2>
+      <p class="sub">Gunakan email dan kata sandi yang diberikan pengelola perpustakaan.</p>
+
+      <% if (typeof flash !== 'undefined' && flash) { %>
+        <div class="alert alert-<%= flash.type %>"><span><%= flash.message %></span></div>
+      <% } %>
+      <% if (errors.umum) { %>
+        <div class="alert alert-galat"><span><%= errors.umum %></span></div>
+      <% } %>
+
+      <form method="post" action="/login" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="next" value="<%= next %>">
+
+        <div class="field">
+          <label class="label" for="email">Email</label>
+          <input class="input <%= errors.email ? 'is-invalid' : '' %>" id="email" name="email" type="email"
+                 value="<%= values.email || '' %>" autocomplete="username" required autofocus>
+          <% if (errors.email) { %><span class="error-text"><%= errors.email %></span><% } %>
+        </div>
+
+        <div class="field">
+          <label class="label" for="password">Kata sandi</label>
+          <input class="input <%= errors.password ? 'is-invalid' : '' %>" id="password" name="password" type="password"
+                 autocomplete="current-password" required>
+          <% if (errors.password) { %><span class="error-text"><%= errors.password %></span><% } %>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block mt-2">Masuk</button>
+      </form>
+
+      <p class="auth-switch">Belum punya akun? <a href="/daftar">Daftar sebagai anggota</a></p>
+
+      <div class="demo-accounts">
+        <strong>Akun demo</strong>
+        <table>
+          <tr><td>Admin</td><td><code>admin@pustakakita.id</code> / <code>Admin#2026</code></td></tr>
+          <tr><td>Petugas</td><td><code>petugas@pustakakita.id</code> / <code>Petugas#2026</code></td></tr>
+          <tr><td>Anggota</td><td><code>anggota@pustakakita.id</code> / <code>Anggota#2026</code></td></tr>
+        </table>
+      </div>
+
+      <p class="auth-footnote">© <%= new Date().getFullYear() %> <%= settings.nama_perpustakaan %> · Layanan perpustakaan gratis</p>
+    </div>
+  </section>
+</div>
+</body>
+</html>

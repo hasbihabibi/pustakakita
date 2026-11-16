@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PustakaKita — Portal Katalog &amp; Dashboard Perpustakaan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        /* 60% Dominan */
+                        surface: '#F8FAFC',
+                        /* 30% Sekunder (2 Warna Berhubungan: Biru Utama & Biru Tua) */
+                        brandBlue: '#0067B8',
+                        brandNavy: '#004A87',
+                        /* 10% Aksen (1 Warna Kontras Tidak Berhubungan: Oranye Terakota) */
+                        accentTerra: '#C2410C',
+                        accentTerraDark: '#9A3412',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 60% Permukaan Bersih & Terang */
+        body {
+            background-color: #F8FAFC;
+            color: #1E293B;
+        }
+        /* Pola garis diagonal halus seperti area kategori pada referensi MeL */
+        .subtle-diagonal-bg {
+            background-color: #F8FAFC;
+            background-image: repeating-linear-gradient(
+                -45deg,
+                rgba(0, 103, 184, 0.03),
+                rgba(0, 103, 184, 0.03) 6px,
+                transparent 6px,
+                transparent 12px
+            );
+        }
+        .book-card-transition {
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .book-card-transition:hover {
+            transform: translateY(-3px);
+            border-color: #0067B8;
+        }
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-[#0067B8] selection:text-white">
+
+    <!-- ========================================================== -->
+    <!-- TOP UTILITY BAR (30% SEKUNDER - BIRU PORTAL #0067B8)       -->
+    <!-- ========================================================== -->
+    <div class="bg-[#0067B8] text-white text-xs border-b border-[#004A87]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between">
+            <div class="flex items-center gap-2 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                </svg>
+                <span>PustakaKita.id &bull; Layanan Perpustakaan Terbuka</span>
+            </div>
+            <div class="hidden sm:flex items-center gap-5 font-medium text-sky-100">
+                <button type="button" onclick="switchMode('catalog')" class="hover:text-white transition">Katalog eLibrary</button>
+                <button type="button" onclick="filterQuickFeatured()" class="hover:text-white transition">Koleksi Unggulan</button>
+                <button type="button" onclick="switchMode('dashboard')" class="hover:text-white transition">Panel Pustakawan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- MAIN HEADER (60% DOMINAN PUTIH BERSIH + NAVIGASI TEGAS)    -->
+    <!-- ========================================================== -->
+    <header class="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between py-3.5 sm:h-20 gap-3">
+                <!-- Brand Identity Ala Referensi MeL -->
+                <div class="flex items-center justify-between w-full sm:w-auto">
+                    <a href="#top" onclick="switchMode('catalog'); resetCatalogFilters();" class="flex items-center gap-3 group">
+                        <!-- Logo Monogram Geometris -->
+                        <div class="flex items-end font-display font-extrabold text-2xl tracking-tighter leading-none select-none">
+                            <span class="text-[#C2410C]">P</span>
+                            <span class="text-[#004A87]">u</span>
+                            <span class="text-[#0067B8]">K</span>
+                        </div>
+                        <div class="h-8 w-[1.5px] bg-slate-200"></div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-display font-bold text-lg sm:text-xl text-[#004A87] tracking-tight">
+                                    Pustaka <span class="font-normal text-[#0067B8]">eLibrary</span>
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 font-medium">Mendukung Literasi &amp; Peminjaman Gratis</p>
+                        </div>
+                    </a>
+
+                    <span id="mobileTotalBadge" class="sm:hidden text-xs font-semibold bg-slate-100 text-[#004A87] px-2.5 py-1 rounded border border-slate-200">
+                        8 Koleksi
+                    </span>
+                </div>
+
+                <!-- Navigation Switcher (Clean Tab Style ala MeL Header) -->
+                <nav class="flex items-center gap-2 sm:gap-6 w-full sm:w-auto border-t sm:border-t-0 pt-2.5 sm:pt-0 border-slate-100" role="tablist" aria-label="Navigasi Utama">
+                    <button
+                        id="tabCatalogBtn"
+                        type="button"
+                        role="tab"
+                        aria-selected="true"
+                        onclick="switchMode('catalog')"
+                        class="flex-1 sm:flex-initial py-2 px-3 text-sm font-bold text-[#0067B8] border-b-2 border-[#0067B8] transition-all flex items-center justify-center gap-2"
+                    >
+                        <span>Katalog Peminjam</span>
+                    </button>
+
+                    <button
+                        id="tabDashboardBtn"
+                        type="button"
+                        role="tab"
+                        aria-selected="false"
+                        onclick="switchMode('dashboard')"
+                        class="flex-1 sm:flex-initial py-2 px-3 text-sm font-semibold text-slate-600 hover:text-[#004A87] border-b-2 border-transparent transition-all flex items-center justify-center gap-2"
+                    >
+                        <span>Dashboard Pengelola</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================== -->
+    <!-- MAIN WORKSPACE                                             -->
+    <!-- ========================================================== -->
+    <main class="flex-1">
+
+        <!-- ====================================================== -->
+        <!-- VIEW 1: KATALOG PEMINJAM (GAYA PORTAL REFERENSI MEL)   -->
+        <!-- ====================================================== -->
+        <section id="catalogView">
+            <!-- 1. HERO BANNER GELAP KONTRASTING (ALA BANNER ME-L) -->
+            <div class="relative bg-[#0B0F19] text-white overflow-hidden">
+                <!-- Ilustrasi Latar Rak Buku / Gradien Hitam ke Biru Tua di Sisi Kanan -->
+                <div class="absolute inset-0 bg-gradient-to-r from-[#05070B] via-[#0B0F19]/95 to-[#004A87]/70"></div>
+                <!-- Aksen Geometris Rak Buku Halus di Sisi Kanan -->
+                <div class="hidden md:flex absolute right-0 top-0 bottom-0 w-1/2 items-center justify-end pr-12 opacity-25 pointer-events-none select-none">
+                    <div class="grid grid-cols-4 gap-3 transform -skew-x-6">
+                        <div class="w-12 h-56 rounded bg-[#0067B8]"></div>
+                        <div class="w-14 h-64 rounded bg-[#004A87] mt-6"></div>
+                        <div class="w-12 h-52 rounded bg-[#C2410C] mt-2"></div>
+                        <div class="w-14 h-60 rounded bg-[#0067B8] mt-8"></div>
+                    </div>
+                </div>
+
+                <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+                    <div class="max-w-xl space-y-4">
+                        <h1 class="font-display text-3xl sm:text-4xl lg:text-[42px] font-extrabold leading-[1.15] tracking-tight text-white">
+                            Temukan bacaan tepat.<br>
+                            Lebih mudah. Lebih cepat.
+                        </h1>
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                            Jelajahi katalog perpustakaan digital &amp; fisik secara terbuka. Cek ketersediaan stok eksemplar secara langsung dan ajukan peminjaman gratis via WhatsApp.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. PITA PENCARIAN BIRU SOLID (30% SEKUNDER - #0067B8) -->
+            <div class="bg-[#0067B8] text-white shadow-md">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+                    <div class="flex flex-col lg:flex-row lg:items-center gap-3.5">
+                        <label for="searchInput" class="font-display font-bold text-sm sm:text-base whitespace-nowrap tracking-tight">
+                            Cari PustakaKita
+                        </label>
+
+                        <!-- Kotak Input Putih Bersih di Tengah Pita Biru (Sama persis dengan Search MeLCat) -->
+                        <div class="relative flex-1">
+                            <input
+                                id="searchInput"
+                                type="search"
+                                placeholder="Cari judul buku, kata kunci deskripsi, atau ID koleksi..."
+                                class="w-full pl-4 pr-11 py-2.5 rounded bg-white text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#C2410C] shadow-xs"
+                            >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-600 absolute right-3.5 top-2.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+
+                        <!-- Quick Links di Sisi Kanan Pita Biru -->
+                        <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm font-semibold text-white pt-1 lg:pt-0">
+                            <button
+                                type="button"
+                                onclick="toggleOnlyAvailableQuick()"
+                                id="quickAvailableTopBtn"
+                                class="inline-flex items-center gap-1.5 hover:text-sky-200 transition"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Stok Tersedia</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onclick="switchMode('dashboard')"
+                                class="inline-flex items-center gap-1.5 hover:text-sky-200 transition"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                                <span>Kelola Katalog</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. TIGA BLOK KATEGORI CEPAT (MENERAPKAN 30% SEKUNDER & 10% AKSEN TERAKOTA) -->
+            <div class="subtle-diagonal-bg border-b border-slate-200/80 py-6">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Blok 1: 10% Aksen Oranye Terakota (#C2410C) -->
+                        <button
+                            type="button"
+                            onclick="filterQuickFeatured()"
+                            class="group flex items-center justify-between px-6 py-4 rounded-md bg-[#C2410C] hover:bg-[#9A3412] text-white shadow-sm transition text-left"
+                        >
+                            <div>
+                                <span class="block font-display font-bold text-base sm:text-lg">Koleksi Unggulan</span>
+                                <span class="text-xs text-orange-100">Rekomendasi bacaan pilihan utama</span>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-orange-200 group-hover:scale-105 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        </button>
+
+                        <!-- Blok 2: 30% Sekunder Biru Samudra Dalam (#004A87) -->
+                        <button
+                            type="button"
+                            onclick="filterQuickAvailable()"
+                            class="group flex items-center justify-between px-6 py-4 rounded-md bg-[#004A87] hover:bg-[#003766] text-white shadow-sm transition text-left"
+                        >
+                            <div>
+                                <span class="block font-display font-bold text-base sm:text-lg">Siap Dipinjam</span>
+                                <span class="text-xs text-sky-200">Eksemplar fisik tersedia di rak</span>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-sky-200 group-hover:scale-105 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                            </svg>
+                        </button>
+
+                        <!-- Blok 3: 30% Sekunder Biru Portal (#0067B8) -->
+                        <button
+                            type="button"
+                            onclick="resetCatalogFilters()"
+                            class="group flex items-center justify-between px-6 py-4 rounded-md bg-[#0067B8] hover:bg-[#004A87] text-white shadow-sm transition text-left"
+                        >
+                            <div>
+                                <span class="block font-display font-bold text-base sm:text-lg">Semua Koleksi</span>
+                                <span class="text-xs text-sky-100">Tampilkan seluruh daftar pustaka</span>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-sky-200 group-hover:scale-105 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. AREA KATALOG UTAMA (60% PUTIH BERSIH + HEADING GARIS BAWAH BIRU) -->
+            <div class="bg-white py-8 sm:py-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-7">
+
+                    <!-- Section Heading ala "Featured Resources" dengan Garis Bawah Biru -->
+                    <div class="text-center space-y-2.5">
+                        <h2 class="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">
+                            Koleksi Pustaka Pilihan
+                        </h2>
+                        <div class="w-24 h-1.5 bg-[#0067B8] mx-auto rounded-full"></div>
+                    </div>
+
+                    <!-- Filter & Sorting Bar Rapi -->
+                    <div class="bg-[#F8FAFC] rounded-lg p-4 border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 max-w-xl">
+                            <div>
+                                <label for="categoryFilter" class="block text-[11px] font-bold text-[#004A87] uppercase tracking-wider mb-1">Kategori Topik</label>
+                                <select
+                                    id="categoryFilter"
+                                    class="w-full px-3 py-2 rounded border border-slate-300 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0067B8] focus:border-[#0067B8]"
+                                >
+                                    <option value="ALL">Semua Kategori</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="sortSelect" class="block text-[11px] font-bold text-[#004A87] uppercase tracking-wider mb-1">Urutkan Berdasarkan</label>
+                                <select
+                                    id="sortSelect"
+                                    class="w-full px-3 py-2 rounded border border-slate-300 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0067B8] focus:border-[#0067B8]"
+                                >
+                                    <option value="featured_first">Koleksi Unggulan Teratas</option>
+                                    <option value="newest">Terbaru Ditambahkan</option>
+                                    <option value="title_asc">Judul Buku (A - Z)</option>
+                                    <option value="title_desc">Judul Buku (Z - A)</option>
+                                    <option value="stock_desc">Stok Eksemplar Terbanyak</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between lg:justify-end gap-4 pt-2 lg:pt-4 border-t lg:border-t-0 border-slate-200">
+                            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                    id="featuredOnlyFilter"
+                                    type="checkbox"
+                                    class="w-4 h-4 rounded text-[#C2410C] border-slate-300 focus:ring-[#C2410C]"
+                                >
+                                <span class="text-xs sm:text-sm font-medium text-slate-700 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-[#C2410C]"></span>
+                                    Unggulan Saja
+                                </span>
+                            </label>
+
+                            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                    id="availableOnlyFilter"
+                                    type="checkbox"
+                                    class="w-4 h-4 rounded text-[#0067B8] border-slate-300 focus:ring-[#0067B8]"
+                                >
+                                <span class="text-xs sm:text-sm font-medium text-slate-700">
+                                    Stok Tersedia (&gt; 0)
+                                </span>
+                            </label>
+
+                            <div class="flex items-center gap-2.5">
+                                <span id="catalogCountInfo" class="text-xs font-semibold text-slate-500">
+                                    Menampilkan 8 dari 8 buku
+                                </span>
+                                <button
+                                    id="resetFilterBtn"
+                                    type="button"
+                                    onclick="resetCatalogFilters()"
+                                    class="hidden text-xs font-bold text-[#C2410C] hover:text-[#9A3412] underline"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Book Cards Grid -->
+                    <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Diisi secara dinamis via JavaScript -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="catalogEmptyState" class="hidden bg-[#F8FAFC] rounded-lg border border-slate-200 p-12 text-center max-w-lg mx-auto my-6">
+                        <div class="w-14 h-14 rounded-lg bg-[#0067B8]/10 text-[#0067B8] flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        </div>
+                        <h3 class="font-display font-bold text-lg text-slate-900 mb-1">Koleksi Buku Tidak Ditemukan</h3>
+                        <p class="text-sm text-slate-500 mb-5">
+                            Tidak ada buku yang cocok dengan kata kunci atau filter kategori yang dipilih.
+                        </p>
+                        <button
+                            type="button"
+                            onclick="resetCatalogFilters()"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#0067B8] hover:bg-[#004A87] text-white text-sm font-semibold transition"
+                        >
+                            Tampilkan Semua Koleksi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================== -->
+        <!-- VIEW 2: DASHBOARD PENGELOLA (ADMIN)                    -->
+        <!-- ====================================================== -->
+        <section id="dashboardView" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <!-- Header Dashboard & Reset Data Awal -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-lg border border-slate-200 shadow-xs">
+                <div>
+                    <span class="text-xs font-bold text-[#0067B8] uppercase tracking-wider">Panel Pustakawan &amp; Admin</span>
+                    <h2 class="font-display text-xl sm:text-2xl font-bold text-[#004A87] mt-0.5">Dashboard Inventaris &amp; Sirkulasi</h2>
+                    <p class="text-sm text-slate-500">
+                        Kelola daftar bacaan, unggah foto sampul buku, perbarui stok eksemplar, dan atur nomor WhatsApp Admin.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onclick="openResetModal()"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition self-start sm:self-auto"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[#C2410C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Reset Data Awal (8 Buku)</span>
+                </button>
+            </div>
+
+            <!-- PANEL PENGATURAN WHATSAPP ADMIN (30% BIRU TUA #004A87 + 10% TOMBOL TERAKOTA) -->
+            <div class="bg-[#004A87] text-white rounded-lg p-5 sm:p-6 shadow-sm border border-[#003766]">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-11 h-11 rounded-lg bg-[#0067B8] border border-sky-400/30 text-white flex items-center justify-center shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
+                            </svg>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="font-display font-bold text-base sm:text-lg text-white">Pengaturan WhatsApp Admin</h3>
+                                <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-[#0067B8] text-sky-100">
+                                    Khusus Admin
+                                </span>
+                            </div>
+                            <p class="text-xs sm:text-sm text-sky-100 leading-relaxed">
+                                Tentukan nomor WhatsApp Admin penerima permintaan peminjaman buku. Input <code class="bg-white/15 px-1.5 py-0.5 rounded font-mono text-white">08...</code> otomatis diubah menjadi <code class="bg-white/15 px-1.5 py-0.5 rounded font-mono text-white">628...</code>.
+                            </p>
+                            <p class="text-xs text-sky-200 font-medium pt-0.5">
+                                Nomor Aktif: <span id="adminWaCurrentBadge" class="font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded">+6281234567890</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <form id="adminWhatsappForm" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 lg:min-w-[380px]">
+                        <div class="relative flex-1">
+                            <label for="adminWhatsappInput" class="sr-only">Nomor WhatsApp Admin</label>
+                            <span class="absolute left-3 top-2.5 text-xs font-bold text-[#004A87] bg-slate-100 px-1.5 py-0.5 rounded">+</span>
+                            <input
+                                id="adminWhatsappInput"
+                                type="tel"
+                                inputmode="numeric"
+                                placeholder="6281234567890 atau 0812..."
+                                required
+                                class="w-full pl-9 pr-3.5 py-2.5 rounded border border-slate-300 bg-white text-sm font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
+                            >
+                        </div>
+                        <button
+                            type="submit"
+                            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-[#C2410C] hover:bg-[#9A3412] text-white text-sm font-bold transition shadow-xs shrink-0"
+                        >
+                            <span>Simpan Nomor</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 4 KPI SUMMARY CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Judul</p>
+                        <p id="statTotalTitles" class="text-3xl font-extrabold text-[#004A87] mt-1">0</p>
+                        <p id="statFeaturedCount" class="text-xs text-[#C2410C] font-semibold mt-1">0 koleksi unggulan</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-lg bg-[#0067B8]/10 text-[#0067B8] flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Eksemplar</p>
+                        <p id="statTotalStock" class="text-3xl font-extrabold text-[#004A87] mt-1">0</p>
+                        <p class="text-xs text-slate-500 font-medium mt-1">Fisik di rak perpustakaan</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-lg bg-[#004A87]/10 text-[#004A87] flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Jumlah Kategori</p>
+                        <p id="statTotalCategories" class="text-3xl font-extrabold text-[#004A87] mt-1">0</p>
+                        <p id="statCategoryListPreview" class="text-xs text-slate-500 font-medium mt-1 truncate max-w-[160px]">Beragam topik</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-lg bg-[#C2410C]/10 text-[#C2410C] flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Buku Tersedia</p>
+                        <p id="statAvailableTitles" class="text-3xl font-extrabold text-[#004A87] mt-1">0</p>
+                        <p id="statOutOfStockCount" class="text-xs text-[#0067B8] font-semibold mt-1">Siap dipinjam anggota</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-lg bg-[#0067B8]/10 text-[#0067B8] flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN CRUD WORKSPACE -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+                <!-- Form Tambah / Edit Buku -->
+                <div class="lg:col-span-4 bg-white rounded-lg border border-slate-200 shadow-xs p-5 sm:p-6">
+                    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
+                        <div>
+                            <h3 id="formTitle" class="font-display font-bold text-lg text-[#004A87]">Tambah Koleksi Buku</h3>
+                            <p id="formSubtitle" class="text-xs text-slate-500">Isi data koleksi baru perpustakaan</p>
+                        </div>
+                        <span id="editModeBadge" class="hidden text-xs font-bold px-2.5 py-0.5 rounded bg-[#C2410C]/10 text-[#C2410C]">
+                            Mode Edit
+                        </span>
+                    </div>
+
+                    <!-- Validation Alert Box -->
+                    <div id="formErrorBox" class="hidden mb-4 p-3.5 rounded bg-red-50 border border-red-200 text-red-800 text-xs space-y-1">
+                        <p class="font-bold">Mohon periksa kembali input Anda:</p>
+                        <ul id="formErrorList" class="list-disc list-inside space-y-0.5"></ul>
+                    </div>
+
+                    <form id="bookForm" class="space-y-4" novalidate>
+                        <input type="hidden" id="bookIdInput" value="">
+
+                        <div>
+                            <label for="judulInput" class="block text-xs font-bold text-slate-700 mb-1">
+                                Judul Buku <span class="text-[#C2410C]">*</span>
+                            </label>
+                            <input
+                                id="judulInput"
+                                type="text"
+                                required
+                                maxlength="120"
+                                placeholder="Contoh: Pengantar Algoritma & Struktur Data"
+                                class="w-full px-3.5 py-2 rounded border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0067B8] focus:border-[#0067B8]"
+                            >
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <div>
+                                <label for="kategoriInput" class="block text-xs font-bold text-slate-700 mb-1">
+                                    Kategori <span class="text-[#C2410C]">*</span>
+                                </label>
+                                <input
+                                    id="kategoriInput"
+                                    type="text"
+                                    list="kategoriSuggestions"
+                                    required
+                                    maxlength="50"
+                                    placeholder="Sains, Sastra, dll."
+                                    class="w-full px-3.5 py-2 rounded border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0067B8] focus:border-[#0067B8]"
+                                >
+                                <datalist id="kategoriSuggestions">
+                                    <option value="Sastra Klasik"></option>
+                                    <option value="Sains & Alam"></option>
+                                    <option value="Teknologi & Komputer"></option>
+                                    <option value="Sejarah & Budaya"></option>
+                                    <option value="Filsafat & Psikologi"></option>
+                                    <option value="Edukasi & Referensi"></option>
+                                </datalist>
+                            </div>
+
+                            <div>
+                                <label for="stokInput" class="block text-xs font-bold text-slate-700 mb-1">
+                                    Stok Eksemplar <span class="text-[#C2410C]">*</span>
+                                </label>
+                                <input
+                                    id="stokInput"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    required
+                                    value="1"
+                                    class="w-full px-3.5 py-2 rounded border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0067B8] focus:border-[#0067B8]"
+                                >
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="deskripsiInput" class="block text-xs font-bold text-slate-700 mb-1">
+                                Deskripsi Singkat <span class="text-[#C2410C]">*</span>
+                            </label>
+                            <textarea
+                                id="deskripsiInput"
+                                rows="3"
+                                required
+                                maxlength="400"
+                                placeholder="Ringkasan isi buku, topik bahasan, atau manfaat bagi pembaca..."
+                                class="w-full px-3.5 py-2 rounded border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0067B8] focus:border-[#0067B8]"
+                            ></textarea>
+                        </div>
+
+                        <!-- Pengaturan Sampul Buku -->
+                        <div class="p-3.5 rounded bg-[#F8FAFC] border border-slate-200 space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs font-bold text-[#004A87]">Sampul Buku &amp; Pratinjau</span>
+                                <button
+                                    id="resetCoverAutoBtn"
+                                    type="button"
+                                    onclick="resetCoverToAutoSvg()"
+                                    class="hidden text-[11px] font-bold text-[#C2410C] hover:underline"
+                                >
+                                    Gunakan Sampul Otomatis
+                                </button>
+                            </div>
+
+                            <div class="flex items-center gap-3.5 bg-white p-2.5 rounded border border-slate-200">
+                                <img
+                                    id="formCoverPreview"
+                                    src=""
+                                    alt="Pratinjau sampul buku"
+                                    class="w-16 rounded object-cover border border-slate-200 shrink-0 aspect-[3/4]"
+                                >
+                                <div class="min-w-0 flex-1 space-y-1">
+                                    <p id="previewSourceBadge" class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#0067B8]/10 text-[#004A87]">
+                                        SVG Katalog Otomatis
+                                    </p>
+                                    <p class="text-[11px] text-slate-500 leading-snug">
+                                        Unggah foto sampul (kompresi otomatis lebar maks. 320px) atau pilih warna sampul SVG.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="coverFileInput" class="block text-xs font-semibold text-slate-700 mb-1">
+                                    Unggah Gambar Sampul (PNG, JPG, WebP)
+                                </label>
+                                <input
+                                    id="coverFileInput"
+                                    type="file"
+                                    accept="image/png, image/jpeg, image/webp"
+                                    class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#0067B8] file:text-white hover:file:bg-[#004A87] cursor-pointer bg-white rounded border border-slate-300"
+                                >
+                            </div>
+
+                            <div>
+                                <label for="coverThemeSelect" class="block text-xs font-semibold text-slate-700 mb-1">
+                                    Palet Sampul SVG (Jika Tanpa Unggahan)
+                                </label>
+                                <select
+                                    id="coverThemeSelect"
+                                    class="w-full px-3 py-2 rounded border border-slate-300 bg-white text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0067B8]"
+                                >
+                                    <option value="portal_blue">1. Biru Portal Utama (Royal Blue)</option>
+                                    <option value="deep_navy">2. Biru Samudra Dalam (Deep Navy)</option>
+                                    <option value="terracotta_accent">3. Oranye Terakota (Aksen Kontras)</option>
+                                    <option value="slate_carbon">4. Karbon Gelap (Editorial Black)</option>
+                                    <option value="cobalt_classic">5. Biru Kobalt Klasik</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Checkbox Unggulan -->
+                        <div>
+                            <label class="flex items-start gap-2.5 cursor-pointer select-none p-3 rounded border border-slate-200 bg-[#F8FAFC] hover:border-[#C2410C] transition">
+                                <input
+                                    id="unggulanInput"
+                                    type="checkbox"
+                                    class="mt-0.5 w-4 h-4 rounded text-[#C2410C] border-slate-300 focus:ring-[#C2410C]"
+                                >
+                                <div>
+                                    <span class="block text-xs font-bold text-slate-900">Tandai sebagai Koleksi Unggulan</span>
+                                    <span class="block text-[11px] text-slate-500">Menampilkan lencana aksen Oranye Terakota (★ Unggulan).</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center gap-2.5 pt-2">
+                            <button
+                                id="submitBookBtn"
+                                type="submit"
+                                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-[#0067B8] hover:bg-[#004A87] text-white text-sm font-bold transition"
+                            >
+                                <span id="submitBtnText">Simpan Buku</span>
+                            </button>
+
+                            <button
+                                id="cancelEditBtn"
+                                type="button"
+                                onclick="resetBookForm()"
+                                class="hidden px-4 py-2.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition"
+                            >
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tabel Inventaris Buku -->
+                <div class="lg:col-span-8 bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="p-5 sm:p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-display font-bold text-lg text-[#004A87]">Daftar Inventaris Buku</h3>
+                            <p class="text-xs text-slate-500">Gunakan tombol <strong>-1</strong> / <strong>+1</strong> untuk simulasi cepat peminjaman dan pengembalian.</p>
+                        </div>
+                        <span id="tableCountBadge" class="inline-flex items-center self-start sm:self-auto px-3 py-1 rounded text-xs font-bold bg-[#0067B8]/10 text-[#004A87]">
+                            8 Judul Terdaftar
+                        </span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 bg-[#F8FAFC] text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                    <th class="py-3.5 pl-5 pr-3">Koleksi Buku</th>
+                                    <th class="py-3.5 px-3">Kategori</th>
+                                    <th class="py-3.5 px-3 text-center">Sirkulasi Stok</th>
+                                    <th class="py-3.5 px-3 text-center">Status</th>
+                                    <th class="py-3.5 pl-3 pr-5 text-right">Aksi Pengelola</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTableBody" class="divide-y divide-slate-200 text-sm">
+                                <!-- Diisi secara dinamis via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================================== -->
+    <!-- FOOTER (30% SEKUNDER - BIRU SAMUDRA DALAM #004A87)         -->
+    <!-- ========================================================== -->
+    <footer class="bg-[#004A87] text-white mt-auto border-t-4 border-[#0067B8]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sky-100">
+            <div class="flex items-center gap-2.5">
+                <span class="font-display font-bold text-sm text-white">Pustaka eLibrary</span>
+                <span>&bull;</span>
+                <span>Portal Katalog Perpustakaan Terbuka (Bebas Biaya Peminjaman)</span>
+            </div>
+            <div>
+                <span>Penyimpanan Lokal Peramban (<code class="bg-[#0067B8] px-1.5 py-0.5 rounded text-white">localStorage</code>)</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========================================================== -->
+    <!-- BOOK DETAIL MODAL (FOR READERS)                            -->
+    <!-- ========================================================== -->
+    <div id="bookDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+        <div class="bg-white rounded-lg max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200">
+            <div class="grid grid-cols-1 sm:grid-cols-12">
+                <div class="sm:col-span-5 bg-slate-100 relative aspect-[3/4] sm:aspect-auto">
+                    <img id="detailModalCover" src="" alt="Sampul buku" class="w-full h-full object-cover">
+                    <span id="detailModalId" class="absolute top-3 left-3 px-2.5 py-1 rounded bg-[#004A87] text-white text-xs font-mono font-bold">
+                        PK-101
+                    </span>
+                </div>
+                <div class="sm:col-span-7 p-6 flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span id="detailModalCategory" class="text-xs font-bold uppercase tracking-wider text-[#004A87] bg-[#0067B8]/10 px-2.5 py-0.5 rounded">
+                                    Kategori
+                                </span>
+                                <span id="detailModalFeatured" class="hidden text-xs font-bold px-2.5 py-0.5 rounded bg-[#C2410C] text-white">
+                                    ★ Koleksi Unggulan
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                onclick="closeBookDetailModal()"
+                                aria-label="Tutup detail buku"
+                                class="p-1.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <h3 id="detailModalTitle" class="font-display font-bold text-xl text-slate-900 leading-snug">
+                            Judul Buku
+                        </h3>
+
+                        <div id="detailModalStockBadge"></div>
+
+                        <p id="detailModalDescription" class="text-sm text-slate-600 leading-relaxed pt-1">
+                            Deskripsi lengkap buku.
+                        </p>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-200 flex flex-col sm:flex-row gap-2.5">
+                        <div id="detailModalActionContainer" class="flex-1"></div>
+                        <button
+                            type="button"
+                            onclick="closeBookDetailModal()"
+                            class="px-4 py-2.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition"
+                        >
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- CUSTOM CONFIRMATION MODAL                                  -->
+    <!-- ========================================================== -->
+    <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-lg bg-[#C2410C]/10 text-[#C2410C] flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h4 id="modalTitle" class="font-display font-bold text-base text-slate-900">Konfirmasi Tindakan</h4>
+                    <p id="modalMessage" class="text-sm text-slate-600 mt-1 leading-relaxed"></p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                    type="button"
+                    onclick="closeConfirmModal()"
+                    class="px-4 py-2 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition"
+                >
+                    Batal
+                </button>
+                <button
+                    id="modalConfirmBtn"
+                    type="button"
+                    class="px-4 py-2 rounded bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs sm:text-sm font-semibold transition"
+                >
+                    Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- ========================================================== -->
+    <!-- APPLICATION JAVASCRIPT                                     -->
+    <!-- ========================================================== -->
+    <script>
+        const STORAGE_KEY = 'pustakakita_books_v1';
+        const ADMIN_WA_STORAGE_KEY = 'pustakakita_admin_wa_v1';
+        const DEFAULT_ADMIN_WA = '6281234567890';
+
+        // Palet SVG Sampul Selaras Aturan 60 : 30 : 10 (Biru Portal, Biru Tua, Oranye Terakota, Karbon)
+        const PORTAL_COVER_PALETTES = {
+            portal_blue:       { bg1: '#004A87', bg2: '#0067B8', accent: '#BAE6FD', spine: '#002F56' },
+            deep_navy:         { bg1: '#0B192C', bg2: '#004A87', accent: '#93C5FD', spine: '#050B14' },
+            terracotta_accent: { bg1: '#7C2D12', bg2: '#C2410C', accent: '#FED7AA', spine: '#431407' },
+            slate_carbon:      { bg1: '#0F172A', bg2: '#334155', accent: '#E2E8F0', spine: '#020617' },
+            cobalt_classic:    { bg1: '#1E3A8A', bg2: '#0067B8', accent: '#DBEAFE', spine: '#172554' }
+        };
+
+        function generatePortalBookCoverSvg(judul, kategori, themeKey = 'portal_blue') {
+            const palette = PORTAL_COVER_PALETTES[themeKey] || PORTAL_COVER_PALETTES.portal_blue;
+            const safeTitle = String(judul || 'Koleksi Pustaka').trim();
+            const safeCat = String(kategori || 'Umum').trim().toUpperCase();
+
+            const words = safeTitle.split(/\s+/);
+            const lines = [];
+            let currentLine = '';
+
+            for (const word of words) {
+                if ((currentLine + ' ' + word).trim().length <= 18) {
+                    currentLine = (currentLine + ' ' + word).trim();
+                } else {
+                    if (currentLine) lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            if (currentLine) lines.push(currentLine);
+            const displayLines = lines.slice(0, 3);
+            if (lines.length > 3) {
+                displayLines[2] = displayLines[2].slice(0, 15) + '...';
+            }
+
+            const escapeXml = (str) => str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+
+            const titleSvgLines = displayLines.map((line, index) => {
+                const yPos = 190 + (index * 32);
+                return `<text x="48" y="${yPos}" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="bold" font-size="23" fill="#ffffff">${escapeXml(line)}</text>`;
+            }).join('');
+
+            const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 480" width="360" height="480">
+                <defs>
+                    <linearGradient id="portalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="${palette.bg1}" />
+                        <stop offset="100%" stop-color="${palette.bg2}" />
+                    </linearGradient>
+                </defs>
+                <rect width="360" height="480" fill="url(#portalGrad)" />
+                <rect x="0" y="0" width="22" height="480" fill="${palette.spine}" />
+                <line x1="23" y1="0" x2="23" y2="480" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5" />
+                <rect x="44" y="36" width="276" height="408" fill="none" stroke="${palette.accent}" stroke-opacity="0.3" stroke-width="1.5" />
+                <rect x="48" y="64" width="220" height="26" rx="3" fill="${palette.spine}" opacity="0.75" />
+                <text x="58" y="81" font-family="Inter, Arial, sans-serif" font-weight="bold" font-size="11" fill="${palette.accent}" letter-spacing="1.2">${escapeXml(safeCat.slice(0, 22))}</text>
+                ${titleSvgLines}
+                <rect x="48" y="302" width="76" height="4" fill="#C2410C" />
+                <text x="48" y="422" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" letter-spacing="1">PUSTAKAKITA ELIBRARY</text>
+            </svg>`;
+
+            return 'data:image/svg+xml;utf8,' + encodeURIComponent(svgContent);
+        }
+
+        const INITIAL_SEED_BOOKS = [
+            {
+                id: 'PK-101',
+                judul: 'Pengantar Logika & Algoritma Pemrograman',
+                kategori: 'Teknologi & Komputer',
+                stok: 4,
+                deskripsi: 'Panduan fundamental mempelajari cara berpikir komputasional, struktur percabangan, perulangan, dan penyusunan algoritma pemecahan masalah.',
+                coverTheme: 'portal_blue',
+                imageUrl: '',
+                unggulan: true
+            },
+            {
+                id: 'PK-102',
+                judul: 'Ekologi Terumbu Karang & Biota Laut Nusantara',
+                kategori: 'Sains & Alam',
+                stok: 3,
+                deskripsi: 'Eksplorasi ekosistem terumbu karang, padang lamun, serta pelestarian keanekaragaman hayati pesisir dan lautan di kepulauan Indonesia.',
+                coverTheme: 'deep_navy',
+                imageUrl: '',
+                unggulan: true
+            },
+            {
+                id: 'PK-103',
+                judul: 'Antologi Sastra Klasik & Syair Pelaut',
+                kategori: 'Sastra Klasik',
+                stok: 2,
+                deskripsi: 'Kumpulan karya sastra klasik, gurindam, pantun, dan prosa pilihan yang merekam jejak kebijaksanaan tutur masyarakat masa lampau.',
+                coverTheme: 'terracotta_accent',
+                imageUrl: '',
+                unggulan: false
+            },
+            {
+                id: 'PK-104',
+                judul: 'Sejarah Jalur Rempah & Maritim Nusantara',
+                kategori: 'Sejarah & Budaya',
+                stok: 5,
+                deskripsi: 'Menelusuri jaringan pelayaran niaga kuno, pertukaran budaya di pelabuhan pesisir, dan peran strategis rempah dalam sejarah dunia.',
+                coverTheme: 'cobalt_classic',
+                imageUrl: '',
+                unggulan: true
+            },
+            {
+                id: 'PK-105',
+                judul: 'Filsafat Ilmu & Seni Berpikir Kritis',
+                kategori: 'Filsafat & Psikologi',
+                stok: 0,
+                deskripsi: 'Membahas metode ilmiah, penalaran deduktif dan induktif, serta cara mengenali sesat pikir (logical fallacies) dalam diskusi sehari-hari.',
+                coverTheme: 'slate_carbon',
+                imageUrl: '',
+                unggulan: false
+            },
+            {
+                id: 'PK-106',
+                judul: 'Navigasi Bintang & Astronomi Maritim',
+                kategori: 'Sains & Alam',
+                stok: 3,
+                deskripsi: 'Pengenalan benda-benda langit, fase bulan, rasi bintang di langit selatan, serta cara membaca arah mata angin secara tradisional.',
+                coverTheme: 'deep_navy',
+                imageUrl: '',
+                unggulan: false
+            },
+            {
+                id: 'PK-107',
+                judul: 'Panduan Menulis Esai Ilmiah & Jurnal',
+                kategori: 'Edukasi & Referensi',
+                stok: 6,
+                deskripsi: 'Teknik menyusun kerangka tulisan akademik, melakukan sitasi pustaka yang benar, dan menyajikan gagasan secara lugas dan terstruktur.',
+                coverTheme: 'portal_blue',
+                imageUrl: '',
+                unggulan: false
+            },
+            {
+                id: 'PK-108',
+                judul: 'Arsitektur Pesisir & Permukiman Bahari',
+                kategori: 'Sejarah & Budaya',
+                stok: 1,
+                deskripsi: 'Kajian desain bangunan tradisional pesisir yang tangguh menghadapi angin laut, pasang surut air, dan selaras dengan lingkungan.',
+                coverTheme: 'terracotta_accent',
+                imageUrl: '',
+                unggulan: true
+            }
+        ];
+
+        let booksState = [];
+        let adminWhatsappNumber = DEFAULT_ADMIN_WA;
+        let currentMode = 'catalog';
+        let pendingConfirmAction = null;
+        let uploadedCoverDataUri = '';
+
+        function normalizeIndonesianWhatsApp(rawInput) {
+            const digitsOnly = String(rawInput || '').replace(/\D/g, '');
+            if (!digitsOnly) return '';
+            if (digitsOnly.startsWith('0')) return '62' + digitsOnly.slice(1);
+            if (digitsOnly.startsWith('8')) return '62' + digitsOnly;
+            return digitsOnly;
+        }
+
+        function loadAdminWhatsAppFromStorage() {
+            try {
+                const storedWa = localStorage.getItem(ADMIN_WA_STORAGE_KEY);
+                if (storedWa) {
+                    const normalized = normalizeIndonesianWhatsApp(storedWa);
+                    if (normalized.length >= 9 && normalized.length <= 15) {
+                        adminWhatsappNumber = normalized;
+                    }
+                }
+            } catch (err) {
+                console.error('Gagal memuat nomor WhatsApp Admin:', err);
+            }
+            syncAdminWhatsAppUi();
+        }
+
+        function saveAdminWhatsAppToStorage() {
+            try {
+                localStorage.setItem(ADMIN_WA_STORAGE_KEY, adminWhatsappNumber);
+            } catch (err) {
+                console.error('Gagal menyimpan nomor WhatsApp Admin:', err);
+            }
+            syncAdminWhatsAppUi();
+        }
+
+        function syncAdminWhatsAppUi() {
+            const waInput = document.getElementById('adminWhatsappInput');
+            const waBadge = document.getElementById('adminWaCurrentBadge');
+            if (waInput) waInput.value = adminWhatsappNumber;
+            if (waBadge) waBadge.textContent = `+${adminWhatsappNumber}`;
+        }
+
+        function handleAdminWhatsAppSubmit(event) {
+            event.preventDefault();
+            const waInput = document.getElementById('adminWhatsappInput');
+            const normalized = normalizeIndonesianWhatsApp(waInput.value);
+
+            if (!normalized || normalized.length < 9 || normalized.length > 15) {
+                showToast('Nomor WhatsApp Admin tidak valid. Masukkan 9–15 digit angka.', 'error');
+                return;
+            }
+
+            adminWhatsappNumber = normalized;
+            saveAdminWhatsAppToStorage();
+            renderAll();
+            showToast(`Nomor WhatsApp Admin disimpan (+${adminWhatsappNumber}).`);
+        }
+
+        function compressCoverImageWithCanvas(file, maxWidth = 320, jpegQuality = 0.78) {
+            return new Promise((resolve, reject) => {
+                const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+                if (!file || !allowedTypes.includes(file.type)) {
+                    reject(new Error('Format file harus berupa PNG, JPEG, atau WebP.'));
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (readEvent) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let targetWidth = img.width;
+                        let targetHeight = img.height;
+
+                        if (targetWidth > maxWidth) {
+                            targetHeight = Math.round((targetHeight * maxWidth) / targetWidth);
+                            targetWidth = maxWidth;
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = targetWidth;
+                        canvas.height = targetHeight;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, targetWidth, targetHeight);
+                        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+                        resolve(canvas.toDataURL('image/jpeg', jpegQuality));
+                    };
+                    img.onerror = () => reject(new Error('Gagal memproses gambar.'));
+                    img.src = readEvent.target.result;
+                };
+                reader.onerror = () => reject(new Error('Gagal membaca berkas gambar.'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleCoverFileUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            try {
+                uploadedCoverDataUri = await compressCoverImageWithCanvas(file, 320, 0.78);
+                updateFormCoverPreview();
+                showToast('Gambar sampul berhasil diunggah.');
+            } catch (err) {
+                showToast(err.message || 'Gagal mengunggah gambar sampul.', 'error');
+                event.target.value = '';
+            }
+        }
+
+        function resetCoverToAutoSvg() {
+            uploadedCoverDataUri = '';
+            const fileInput = document.getElementById('coverFileInput');
+            if (fileInput) fileInput.value = '';
+            updateFormCoverPreview();
+            showToast('Sampul dikembalikan ke SVG otomatis.');
+        }
+
+        function updateFormCoverPreview() {
+            const previewImg = document.getElementById('formCoverPreview');
+            const badgeEl = document.getElementById('previewSourceBadge');
+            const resetBtn = document.getElementById('resetCoverAutoBtn');
+
+            const judul = document.getElementById('judulInput').value.trim() || 'Pratinjau Judul Buku';
+            const kategori = document.getElementById('kategoriInput').value.trim() || 'Kategori';
+            const theme = document.getElementById('coverThemeSelect').value || 'portal_blue';
+
+            const autoSvgUri = generatePortalBookCoverSvg(judul, kategori, theme);
+
+            if (uploadedCoverDataUri) {
+                previewImg.src = uploadedCoverDataUri;
+                badgeEl.textContent = 'Foto Unggahan Lokal';
+                badgeEl.className = 'inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#C2410C]/10 text-[#C2410C]';
+                resetBtn.classList.remove('hidden');
+            } else {
+                previewImg.src = autoSvgUri;
+                badgeEl.textContent = 'SVG Katalog Otomatis';
+                badgeEl.className = 'inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#0067B8]/10 text-[#004A87]';
+                resetBtn.classList.add('hidden');
+            }
+        }
+
+        function loadBooksFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) {
+                    booksState = cloneSeedBooks();
+                    saveBooksToStorage();
+                    return;
+                }
+                const parsed = JSON.parse(raw);
+                if (!Array.isArray(parsed)) {
+                    booksState = cloneSeedBooks();
+                    saveBooksToStorage();
+                    return;
+                }
+                booksState = parsed.map((item, idx) => sanitizeBookObject(item, idx));
+            } catch (err) {
+                booksState = cloneSeedBooks();
+            }
+        }
+
+        function sanitizeBookObject(item, fallbackIdx = 0) {
+            const judul = String(item.judul || 'Buku Tanpa Judul').trim();
+            const kategori = String(item.kategori || 'Umum').trim();
+            const parsedStok = Number.parseInt(item.stok, 10);
+            const stok = Number.isInteger(parsedStok) && parsedStok >= 0 ? parsedStok : 0;
+            const deskripsi = String(item.deskripsi || 'Tidak ada deskripsi.').trim();
+            const coverTheme = PORTAL_COVER_PALETTES[item.coverTheme] ? item.coverTheme : 'portal_blue';
+            const rawImageUrl = String(item.imageUrl || '').trim();
+            const unggulan = Boolean(item.unggulan);
+
+            const isUploadedCover = rawImageUrl.startsWith('data:image/jpeg') ||
+                                    rawImageUrl.startsWith('data:image/png') ||
+                                    rawImageUrl.startsWith('data:image/webp');
+
+            return {
+                id: String(item.id || `PK-${100 + fallbackIdx}`),
+                judul,
+                kategori,
+                stok,
+                deskripsi,
+                coverTheme,
+                imageUrl: isUploadedCover ? rawImageUrl : generatePortalBookCoverSvg(judul, kategori, coverTheme),
+                isUploadedCover,
+                unggulan
+            };
+        }
+
+        function cloneSeedBooks() {
+            return INITIAL_SEED_BOOKS.map((book, idx) => sanitizeBookObject(book, idx + 1));
+        }
+
+        function saveBooksToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(booksState));
+            } catch (err) {
+                showToast('Kuota localStorage penuh! Hapus beberapa buku atau gunakan sampul SVG.', 'error');
+            }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            const catalogView = document.getElementById('catalogView');
+            const dashboardView = document.getElementById('dashboardView');
+            const tabCatalogBtn = document.getElementById('tabCatalogBtn');
+            const tabDashboardBtn = document.getElementById('tabDashboardBtn');
+
+            if (mode === 'catalog') {
+                catalogView.classList.remove('hidden');
+                dashboardView.classList.add('hidden');
+
+                tabCatalogBtn.className = 'flex-1 sm:flex-initial py-2 px-3 text-sm font-bold text-[#0067B8] border-b-2 border-[#0067B8] transition-all flex items-center justify-center gap-2';
+                tabCatalogBtn.setAttribute('aria-selected', 'true');
+
+                tabDashboardBtn.className = 'flex-1 sm:flex-initial py-2 px-3 text-sm font-semibold text-slate-600 hover:text-[#004A87] border-b-2 border-transparent transition-all flex items-center justify-center gap-2';
+                tabDashboardBtn.setAttribute('aria-selected', 'false');
+            } else {
+                catalogView.classList.add('hidden');
+                dashboardView.classList.remove('hidden');
+
+                tabDashboardBtn.className = 'flex-1 sm:flex-initial py-2 px-3 text-sm font-bold text-[#0067B8] border-b-2 border-[#0067B8] transition-all flex items-center justify-center gap-2';
+                tabDashboardBtn.setAttribute('aria-selected', 'true');
+
+                tabCatalogBtn.className = 'flex-1 sm:flex-initial py-2 px-3 text-sm font-semibold text-slate-600 hover:text-[#004A87] border-b-2 border-transparent transition-all flex items-center justify-center gap-2';
+                tabCatalogBtn.setAttribute('aria-selected', 'false');
+            }
+
+            renderAll();
+        }
+
+        /* Quick Filter Actions untuk 3 Blok Kategori MeL */
+        function filterQuickFeatured() {
+            switchMode('catalog');
+            document.getElementById('featuredOnlyFilter').checked = true;
+            document.getElementById('availableOnlyFilter').checked = false;
+            document.getElementById('categoryFilter').value = 'ALL';
+            renderCatalogGrid();
+        }
+
+        function filterQuickAvailable() {
+            switchMode('catalog');
+            document.getElementById('availableOnlyFilter').checked = true;
+            document.getElementById('featuredOnlyFilter').checked = false;
+            document.getElementById('categoryFilter').value = 'ALL';
+            renderCatalogGrid();
+        }
+
+        function toggleOnlyAvailableQuick() {
+            const checkbox = document.getElementById('availableOnlyFilter');
+            checkbox.checked = !checkbox.checked;
+            renderCatalogGrid();
+        }
+
+        function renderAll() {
+            populateCategoryOptions();
+            renderCatalogGrid();
+            renderDashboardSummary();
+            renderInventoryTable();
+            updateFormCoverPreview();
+
+            const mobileBadge = document.getElementById('mobileTotalBadge');
+            if (mobileBadge) {
+                mobileBadge.textContent = `${booksState.length} Koleksi`;
+            }
+        }
+
+        function populateCategoryOptions() {
+            const categorySelect = document.getElementById('categoryFilter');
+            const currentValue = categorySelect.value;
+
+            const uniqueCategories = Array.from(
+                new Set(booksState.map(b => b.kategori.trim()).filter(Boolean))
+            ).sort((a, b) => a.localeCompare(b, 'id'));
+
+            categorySelect.innerHTML = '<option value="ALL">Semua Kategori</option>';
+            uniqueCategories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categorySelect.appendChild(option);
+            });
+
+            categorySelect.value = uniqueCategories.includes(currentValue) ? currentValue : 'ALL';
+        }
+
+        function getFilteredAndSortedBooks() {
+            const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+            const selectedCategory = document.getElementById('categoryFilter').value;
+            const sortBy = document.getElementById('sortSelect').value;
+            const featuredOnly = document.getElementById('featuredOnlyFilter').checked;
+            const availableOnly = document.getElementById('availableOnlyFilter').checked;
+
+            const isFilterActive = searchQuery !== '' || selectedCategory !== 'ALL' || featuredOnly || availableOnly || sortBy !== 'featured_first';
+            const resetFilterBtn = document.getElementById('resetFilterBtn');
+            resetFilterBtn.classList.toggle('hidden', !isFilterActive);
+
+            const filtered = booksState.filter(book => {
+                const matchesSearch = !searchQuery ||
+                    book.judul.toLowerCase().includes(searchQuery) ||
+                    book.deskripsi.toLowerCase().includes(searchQuery) ||
+                    book.id.toLowerCase().includes(searchQuery);
+
+                const matchesCategory = selectedCategory === 'ALL' || book.kategori === selectedCategory;
+                const matchesFeatured = !featuredOnly || book.unggulan === true;
+                const matchesAvailable = !availableOnly || book.stok > 0;
+
+                return matchesSearch && matchesCategory && matchesFeatured && matchesAvailable;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortBy === 'newest') return booksState.indexOf(b) - booksState.indexOf(a);
+                if (sortBy === 'title_asc') return a.judul.localeCompare(b.judul, 'id');
+                if (sortBy === 'title_desc') return b.judul.localeCompare(a.judul, 'id');
+                if (sortBy === 'stock_desc') {
+                    if (b.stok !== a.stok) return b.stok - a.stok;
+                    return a.judul.localeCompare(b.judul, 'id');
+                }
+                if (a.unggulan !== b.unggulan) return a.unggulan ? -1 : 1;
+                return a.judul.localeCompare(b.judul, 'id');
+            });
+
+            return filtered;
+        }
+
+        function createWhatsAppBorrowUrl(book) {
+            const text = `Halo Admin PustakaKita, saya ingin meminjam koleksi buku perpustakaan berikut (layanan peminjaman gratis):\n\n` +
+                         `- Judul: *${book.judul}*\n` +
+                         `- ID Koleksi: *${book.id}*\n` +
+                         `- Kategori: ${book.kategori}\n\n` +
+                         `Apakah eksemplar buku ini tersedia untuk saya pinjam hari ini? Terima kasih.`;
+            return `https://wa.me/${adminWhatsappNumber}?text=${encodeURIComponent(text)}`;
+        }
+
+        function renderCatalogGrid() {
+            const grid = document.getElementById('catalogGrid');
+            const emptyState = document.getElementById('catalogEmptyState');
+            const countInfo = document.getElementById('catalogCountInfo');
+
+            const filteredBooks = getFilteredAndSortedBooks();
+            countInfo.textContent = `Menampilkan ${filteredBooks.length} dari ${booksState.length} buku`;
+
+            if (filteredBooks.length === 0) {
+                grid.innerHTML = '';
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            grid.innerHTML = filteredBooks.map(book => {
+                const isAvailable = book.stok > 0;
+                const fallbackSvg = generatePortalBookCoverSvg(book.judul, book.kategori, book.coverTheme);
+                const coverSrc = book.imageUrl || fallbackSvg;
+                const waUrl = createWhatsAppBorrowUrl(book);
+
+                /* 30% Biru untuk status tersedia, netral abu-abu untuk habis */
+                const stockBadgeHtml = isAvailable
+                    ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#0067B8]/10 text-[#004A87]">
+                         <span class="w-1.5 h-1.5 rounded-full bg-[#0067B8]"></span>
+                         Tersedia: ${book.stok} eks
+                       </span>`
+                    : `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-500">
+                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                         Stok Habis
+                       </span>`;
+
+                /* 10% Aksen Oranye Terakota (#C2410C) untuk Unggulan */
+                const featuredBadgeHtml = book.unggulan
+                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold bg-[#C2410C] text-white shadow-xs">
+                         ★ Unggulan
+                       </span>`
+                    : '';
+
+                /* 10% Aksen Oranye Terakota (#C2410C) untuk Tombol CTA Pinjam */
+                const actionButtonHtml = isAvailable
+                    ? `<a
+                         href="${waUrl}"
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs sm:text-sm font-bold transition shadow-xs"
+                       >
+                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                             <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
+                         </svg>
+                         <span>Pinjam via WhatsApp</span>
+                       </a>`
+                    : `<button
+                         type="button"
+                         disabled
+                         class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-slate-100 text-slate-400 border border-slate-200 text-xs sm:text-sm font-semibold cursor-not-allowed"
+                       >
+                         <span>Sedang Dipinjam Semua</span>
+                       </button>`;
+
+                return `
+                <article class="book-card-transition bg-white rounded-lg border border-slate-200 shadow-xs hover:shadow-md flex flex-col overflow-hidden">
+                    <div
+                        onclick="openBookDetailModal('${escapeHtml(book.id)}')"
+                        class="relative aspect-[3/4] bg-slate-100 overflow-hidden cursor-pointer group border-b border-slate-200"
+                    >
+                        <img
+                            src="${escapeHtml(coverSrc)}"
+                            alt="Sampul ${escapeHtml(book.judul)}"
+                            onerror="this.onerror=null; this.src='${fallbackSvg}';"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        >
+                        <div class="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
+                            <span class="px-2 py-0.5 rounded bg-[#004A87] text-white text-[11px] font-mono font-bold">
+                                ${escapeHtml(book.id)}
+                            </span>
+                            ${featuredBadgeHtml}
+                        </div>
+                        <div class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex justify-end">
+                            <span class="text-xs font-semibold text-white bg-[#0067B8] px-2.5 py-1 rounded">
+                                Lihat Detail
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div class="space-y-1.5">
+                            <span class="block text-[11px] font-bold uppercase tracking-wider text-[#0067B8] truncate">
+                                ${escapeHtml(book.kategori)}
+                            </span>
+
+                            <h3
+                                onclick="openBookDetailModal('${escapeHtml(book.id)}')"
+                                class="font-display font-bold text-base text-slate-900 leading-snug line-clamp-2 cursor-pointer hover:text-[#0067B8] transition"
+                            >
+                                ${escapeHtml(book.judul)}
+                            </h3>
+
+                            <p class="text-xs text-slate-600 leading-relaxed line-clamp-3 pt-1">
+                                ${escapeHtml(book.deskripsi)}
+                            </p>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 space-y-3">
+                            <div class="flex items-center justify-between">
+                                ${stockBadgeHtml}
+                                <span class="text-[11px] font-medium text-slate-400">Gratis</span>
+                            </div>
+                            ${actionButtonHtml}
+                        </div>
+                    </div>
+                </article>
+                `;
+            }).join('');
+        }
+
+        function resetCatalogFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = 'ALL';
+            document.getElementById('sortSelect').value = 'featured_first';
+            document.getElementById('featuredOnlyFilter').checked = false;
+            document.getElementById('availableOnlyFilter').checked = false;
+            renderCatalogGrid();
+        }
+
+        function renderDashboardSummary() {
+            const totalTitles = booksState.length;
+            const totalStock = booksState.reduce((sum, b) => sum + (Number.isInteger(b.stok) ? b.stok : 0), 0);
+            const uniqueCategories = Array.from(new Set(booksState.map(b => b.kategori.trim()).filter(Boolean)));
+            const featuredCount = booksState.filter(b => b.unggulan).length;
+            const availableTitlesCount = booksState.filter(b => b.stok > 0).length;
+            const outOfStockCount = totalTitles - availableTitlesCount;
+
+            document.getElementById('statTotalTitles').textContent = totalTitles;
+            document.getElementById('statFeaturedCount').textContent = `${featuredCount} koleksi unggulan`;
+            document.getElementById('statTotalStock').textContent = totalStock;
+            document.getElementById('statTotalCategories').textContent = uniqueCategories.length;
+            document.getElementById('statCategoryListPreview').textContent = uniqueCategories.length > 0
+                ? uniqueCategories.slice(0, 2).join(', ') + (uniqueCategories.length > 2 ? ', ...' : '')
+                : 'Belum ada kategori';
+
+            document.getElementById('statAvailableTitles').textContent = availableTitlesCount;
+            document.getElementById('statOutOfStockCount').textContent = outOfStockCount > 0
+                ? `${outOfStockCount} judul stok habis`
+                : 'Semua judul tersedia';
+
+            document.getElementById('tableCountBadge').textContent = `${totalTitles} Judul Terdaftar`;
+        }
+
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventoryTableBody');
+
+            if (booksState.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-12 px-6 text-center text-slate-500">
+                            <p class="font-medium text-sm mb-2">Belum ada koleksi buku di inventaris lokal.</p>
+                            <button type="button" onclick="openResetModal()" class="text-xs font-bold text-[#0067B8] underline">
+                                Muat Ulang 8 Buku Contoh
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = booksState.map(book => {
+                const isAvailable = book.stok > 0;
+                const fallbackSvg = generatePortalBookCoverSvg(book.judul, book.kategori, book.coverTheme);
+                const coverSrc = book.imageUrl || fallbackSvg;
+
+                return `
+                <tr class="hover:bg-[#F8FAFC] transition">
+                    <td class="py-3.5 pl-5 pr-3">
+                        <div class="flex items-center gap-3">
+                            <img
+                                src="${escapeHtml(coverSrc)}"
+                                alt="Sampul"
+                                onerror="this.onerror=null; this.src='${fallbackSvg}';"
+                                class="w-10 h-14 rounded object-cover border border-slate-200 shrink-0"
+                            >
+                            <div class="min-w-0 max-w-xs">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[11px] font-mono text-slate-400">${escapeHtml(book.id)}</span>
+                                    ${book.unggulan ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#C2410C]/10 text-[#C2410C]">★ Unggulan</span>' : ''}
+                                </div>
+                                <p class="font-bold text-slate-900 truncate" title="${escapeHtml(book.judul)}">
+                                    ${escapeHtml(book.judul)}
+                                </p>
+                                <p class="text-xs text-slate-500 truncate" title="${escapeHtml(book.deskripsi)}">
+                                    ${escapeHtml(book.deskripsi)}
+                                </p>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                        <span class="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-slate-100 text-[#004A87]">
+                            ${escapeHtml(book.kategori)}
+                        </span>
+                    </td>
+
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button
+                                type="button"
+                                onclick="adjustBookStock('${escapeHtml(book.id)}', -1)"
+                                ${book.stok <= 0 ? 'disabled' : ''}
+                                class="w-7 h-7 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed text-slate-800 font-bold text-xs flex items-center justify-center transition"
+                            >
+                                -1
+                            </button>
+                            <span class="w-9 text-center font-mono font-bold text-sm text-slate-900">
+                                ${book.stok}
+                            </span>
+                            <button
+                                type="button"
+                                onclick="adjustBookStock('${escapeHtml(book.id)}', 1)"
+                                class="w-7 h-7 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center transition"
+                            >
+                                +1
+                            </button>
+                        </div>
+                    </td>
+
+                    <td class="py-3.5 px-3 text-center whitespace-nowrap">
+                        ${isAvailable
+                            ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-[#0067B8]/10 text-[#004A87]">Tersedia</span>'
+                            : '<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-500">Stok Habis</span>'
+                        }
+                    </td>
+
+                    <td class="py-3.5 pl-3 pr-5 text-right whitespace-nowrap">
+                        <div class="inline-flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                onclick="startEditBook('${escapeHtml(book.id)}')"
+                                class="px-3 py-1.5 rounded text-xs font-bold bg-[#0067B8]/10 hover:bg-[#0067B8]/20 text-[#0067B8] transition"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                type="button"
+                                onclick="confirmDeleteBook('${escapeHtml(book.id)}')"
+                                class="px-3 py-1.5 rounded text-xs font-bold bg-[#C2410C]/10 hover:bg-[#C2410C]/20 text-[#C2410C] transition"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function generateNextBookId() {
+            const numericIds = booksState
+                .map(b => {
+                    const match = String(b.id).match(/^PK-(\d+)$/);
+                    return match ? Number.parseInt(match[1], 10) : 0;
+                })
+                .filter(n => n > 0);
+            const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 100;
+            return `PK-${maxId + 1}`;
+        }
+
+        function handleBookFormSubmit(event) {
+            event.preventDefault();
+            clearFormErrors();
+
+            const editingId = document.getElementById('bookIdInput').value.trim();
+            const judul = document.getElementById('judulInput').value.trim();
+            const kategori = document.getElementById('kategoriInput').value.trim();
+            const rawStok = document.getElementById('stokInput').value.trim();
+            const deskripsi = document.getElementById('deskripsiInput').value.trim();
+            const coverTheme = document.getElementById('coverThemeSelect').value;
+            const unggulan = document.getElementById('unggulanInput').checked;
+
+            const errors = [];
+            if (!judul || judul.length < 2) errors.push('Judul buku wajib diisi minimal 2 karakter.');
+            if (!kategori || kategori.length < 2) errors.push('Kategori buku wajib diisi minimal 2 karakter.');
+            const parsedStok = Number(rawStok);
+            if (rawStok === '' || !Number.isInteger(parsedStok) || parsedStok < 0) {
+                errors.push('Stok harus berupa bilangan bulat non-negatif (0 atau lebih).');
+            }
+            if (!deskripsi || deskripsi.length < 10) errors.push('Deskripsi singkat wajib diisi minimal 10 karakter.');
+
+            if (errors.length > 0) {
+                displayFormErrors(errors);
+                return;
+            }
+
+            const finalImageUrl = uploadedCoverDataUri
+                ? uploadedCoverDataUri
+                : generatePortalBookCoverSvg(judul, kategori, coverTheme);
+
+            if (editingId) {
+                const index = booksState.findIndex(b => b.id === editingId);
+                if (index !== -1) {
+                    booksState[index] = {
+                        ...booksState[index],
+                        judul,
+                        kategori,
+                        stok: parsedStok,
+                        deskripsi,
+                        coverTheme,
+                        imageUrl: finalImageUrl,
+                        isUploadedCover: Boolean(uploadedCoverDataUri),
+                        unggulan
+                    };
+                    saveBooksToStorage();
+                    resetBookForm();
+                    renderAll();
+                    showToast(`Koleksi "${judul}" berhasil diperbarui.`);
+                }
+            } else {
+                const newBook = {
+                    id: generateNextBookId(),
+                    judul,
+                    kategori,
+                    stok: parsedStok,
+                    deskripsi,
+                    coverTheme,
+                    imageUrl: finalImageUrl,
+                    isUploadedCover: Boolean(uploadedCoverDataUri),
+                    unggulan
+                };
+                booksState.unshift(newBook);
+                saveBooksToStorage();
+                resetBookForm();
+                renderAll();
+                showToast(`Buku baru "${judul}" (${newBook.id}) ditambahkan.`);
+            }
+        }
+
+        function startEditBook(bookId) {
+            const book = booksState.find(b => b.id === bookId);
+            if (!book) return;
+
+            clearFormErrors();
+            document.getElementById('bookIdInput').value = book.id;
+            document.getElementById('judulInput').value = book.judul;
+            document.getElementById('kategoriInput').value = book.kategori;
+            document.getElementById('stokInput').value = book.stok;
+            document.getElementById('deskripsiInput').value = book.deskripsi;
+            document.getElementById('coverThemeSelect').value = book.coverTheme || 'portal_blue';
+            document.getElementById('unggulanInput').checked = Boolean(book.unggulan);
+
+            const fileInput = document.getElementById('coverFileInput');
+            if (fileInput) fileInput.value = '';
+
+            uploadedCoverDataUri = (book.isUploadedCover && book.imageUrl) ? book.imageUrl : '';
+
+            document.getElementById('formTitle').textContent = `Edit Buku (${book.id})`;
+            document.getElementById('formSubtitle').textContent = 'Perbarui detail koleksi atau unggah sampul baru';
+            document.getElementById('editModeBadge').classList.remove('hidden');
+            document.getElementById('submitBtnText').textContent = 'Simpan Perubahan';
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+
+            updateFormCoverPreview();
+            document.getElementById('bookForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function resetBookForm() {
+            clearFormErrors();
+            document.getElementById('bookForm').reset();
+            document.getElementById('bookIdInput').value = '';
+            document.getElementById('stokInput').value = '1';
+            document.getElementById('coverThemeSelect').value = 'portal_blue';
+            uploadedCoverDataUri = '';
+
+            document.getElementById('formTitle').textContent = 'Tambah Koleksi Buku';
+            document.getElementById('formSubtitle').textContent = 'Isi data koleksi baru perpustakaan';
+            document.getElementById('editModeBadge').classList.add('hidden');
+            document.getElementById('submitBtnText').textContent = 'Simpan Buku';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+
+            updateFormCoverPreview();
+        }
+
+        function adjustBookStock(bookId, delta) {
+            const index = booksState.findIndex(b => b.id === bookId);
+            if (index === -1) return;
+
+            const nextStock = booksState[index].stok + delta;
+            if (nextStock < 0) return;
+
+            booksState[index].stok = nextStock;
+            saveBooksToStorage();
+            renderAll();
+
+            const actionLabel = delta > 0 ? 'Pengembalian (+1)' : 'Peminjaman (-1)';
+            showToast(`${actionLabel}: Stok "${booksState[index].judul}" kini ${nextStock} eks.`);
+        }
+
+        function confirmDeleteBook(bookId) {
+            const book = booksState.find(b => b.id === bookId);
+            if (!book) return;
+
+            openConfirmModal({
+                title: 'Hapus Koleksi Buku?',
+                message: `Apakah Anda yakin ingin menghapus "${book.judul}" (${book.id}) dari inventaris perpustakaan?`,
+                confirmText: 'Ya, Hapus Buku',
+                onConfirm: () => {
+                    booksState = booksState.filter(b => b.id !== bookId);
+                    if (document.getElementById('bookIdInput').value === bookId) resetBookForm();
+                    saveBooksToStorage();
+                    renderAll();
+                    showToast(`Buku "${book.judul}" telah dihapus.`);
+                }
+            });
+        }
+
+        function openResetModal() {
+            openConfirmModal({
+                title: 'Reset ke 8 Buku Contoh Awal?',
+                message: 'Seluruh perubahan buku akan diganti kembali dengan 8 koleksi contoh awal.',
+                confirmText: 'Ya, Reset Data',
+                onConfirm: () => {
+                    booksState = cloneSeedBooks();
+                    saveBooksToStorage();
+                    resetBookForm();
+                    renderAll();
+                    showToast('Data inventaris berhasil dipulihkan ke 8 buku contoh.');
+                }
+            });
+        }
+
+        function openBookDetailModal(bookId) {
+            const book = booksState.find(b => b.id === bookId);
+            if (!book) return;
+
+            const fallbackSvg = generatePortalBookCoverSvg(book.judul, book.kategori, book.coverTheme);
+            const coverImg = document.getElementById('detailModalCover');
+            coverImg.onerror = () => { coverImg.src = fallbackSvg; };
+            coverImg.src = book.imageUrl || fallbackSvg;
+
+            document.getElementById('detailModalId').textContent = book.id;
+            document.getElementById('detailModalCategory').textContent = book.kategori;
+            document.getElementById('detailModalTitle').textContent = book.judul;
+            document.getElementById('detailModalDescription').textContent = book.deskripsi;
+
+            const featuredEl = document.getElementById('detailModalFeatured');
+            featuredEl.classList.toggle('hidden', !book.unggulan);
+
+            const isAvailable = book.stok > 0;
+            document.getElementById('detailModalStockBadge').innerHTML = isAvailable
+                ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold bg-[#0067B8]/10 text-[#004A87]">
+                     <span class="w-2 h-2 rounded-full bg-[#0067B8]"></span>
+                     Tersedia untuk Dipinjam (${book.stok} eksemplar) &bull; Layanan Gratis
+                   </span>`
+                : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-600">
+                     <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                     Stok Habis (Sedang Dipinjam Semua)
+                   </span>`;
+
+            const actionContainer = document.getElementById('detailModalActionContainer');
+            if (isAvailable) {
+                const waUrl = createWhatsAppBorrowUrl(book);
+                actionContainer.innerHTML = `
+                    <a
+                        href="${waUrl}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs sm:text-sm font-bold transition"
+                    >
+                        <span>Pinjam via WhatsApp</span>
+                    </a>
+                `;
+            } else {
+                actionContainer.innerHTML = `
+                    <button
+                        type="button"
+                        disabled
+                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-slate-100 text-slate-400 border border-slate-200 text-xs sm:text-sm font-semibold cursor-not-allowed"
+                    >
+                        <span>Tidak Tersedia Saat Ini</span>
+                    </button>
+                `;
+            }
+
+            const modal = document.getElementById('bookDetailModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeBookDetailModal() {
+            const modal = document.getElementById('bookDetailModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openConfirmModal({ title, message, confirmText, onConfirm }) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('modalConfirmBtn').textContent = confirmText || 'Ya, Lanjutkan';
+            pendingConfirmAction = onConfirm;
+
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeConfirmModal() {
+            pendingConfirmAction = null;
+            const modal = document.getElementById('confirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function displayFormErrors(errors) {
+            const box = document.getElementById('formErrorBox');
+            const list = document.getElementById('formErrorList');
+            list.innerHTML = errors.map(err => `<li>${escapeHtml(err)}</li>`).join('');
+            box.classList.remove('hidden');
+        }
+
+        function clearFormErrors() {
+            const box = document.getElementById('formErrorBox');
+            const list = document.getElementById('formErrorList');
+            list.innerHTML = '';
+            box.classList.add('hidden');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const isError = type === 'error';
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded shadow-lg border text-xs sm:text-sm font-semibold transition-all transform translate-y-2 opacity-0 ${
+                isError
+                    ? 'bg-[#C2410C] text-white border-[#9A3412]'
+                    : 'bg-[#004A87] text-white border-[#0067B8]'
+            }`;
+
+            toast.innerHTML = `
+                <span class="w-2 h-2 rounded-full shrink-0 bg-white"></span>
+                <span class="flex-1">${escapeHtml(message)}</span>
+            `;
+
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 250);
+            }, 3400);
+        }
+
+        function escapeHtml(unsafeStr) {
+            return String(unsafeStr ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAdminWhatsAppFromStorage();
+            loadBooksFromStorage();
+            renderAll();
+
+            document.getElementById('searchInput').addEventListener('input', renderCatalogGrid);
+            document.getElementById('categoryFilter').addEventListener('change', renderCatalogGrid);
+            document.getElementById('sortSelect').addEventListener('change', renderCatalogGrid);
+            document.getElementById('featuredOnlyFilter').addEventListener('change', renderCatalogGrid);
+            document.getElementById('availableOnlyFilter').addEventListener('change', renderCatalogGrid);
+
+            document.getElementById('adminWhatsappForm').addEventListener('submit', handleAdminWhatsAppSubmit);
+            document.getElementById('bookForm').addEventListener('submit', handleBookFormSubmit);
+            document.getElementById('coverFileInput').addEventListener('change', handleCoverFileUpload);
+            document.getElementById('judulInput').addEventListener('input', updateFormCoverPreview);
+            document.getElementById('kategoriInput').addEventListener('input', updateFormCoverPreview);
+            document.getElementById('coverThemeSelect').addEventListener('change', updateFormCoverPreview);
+
+            document.getElementById('modalConfirmBtn').addEventListener('click', () => {
+                if (typeof pendingConfirmAction === 'function') pendingConfirmAction();
+                closeConfirmModal();
+            });
+
+            document.getElementById('confirmModal').addEventListener('click', (e) => {
+                if (e.target.id === 'confirmModal') closeConfirmModal();
+            });
+            document.getElementById('bookDetailModal').addEventListener('click', (e) => {
+                if (e.target.id === 'bookDetailModal') closeBookDetailModal();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeConfirmModal();
+                    closeBookDetailModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

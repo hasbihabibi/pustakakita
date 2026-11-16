@@ -1,0 +1,66 @@
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="footer-monogram"><span>P</span><span>u</span><span>K</span></span>
+          <span class="footer-name"><%= settings.nama_perpustakaan %></span>
+          <p class="footer-tagline">
+            Katalog dan sirkulasi perpustakaan mini untuk admin, petugas, dan anggota.
+            Layanan gratis tanpa biaya pinjam.
+          </p>
+        </div>
+
+        <nav class="footer-col" aria-label="Tautan perpustakaan">
+          <h3>Jelajahi</h3>
+          <a href="/">Katalog buku</a>
+          <% if (role === 'anggota') { %>
+            <a href="/pinjaman-saya">Pinjaman saya</a>
+          <% } %>
+          <% if (role === 'petugas' || role === 'admin') { %>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/kelola/buku">Kelola buku</a>
+            <a href="/kelola/kategori">Kelola kategori</a>
+          <% } %>
+          <% if (role === 'admin') { %>
+            <a href="/admin/pengguna">Kelola pengguna</a>
+            <a href="/admin/pengaturan">Pengaturan</a>
+          <% } %>
+        </nav>
+
+        <div class="footer-col">
+          <h3>Bantuan</h3>
+          <% const waAdmin = whatsappUrl(settings.admin_whatsapp, 'Halo Admin ' + settings.nama_perpustakaan + ', saya butuh bantuan.'); %>
+          <% if (waAdmin) { %>
+            <a href="<%= waAdmin %>" target="_blank" rel="noopener">WhatsApp admin</a>
+          <% } %>
+          <span><%= settings.jam_layanan %></span>
+          <span><%= settings.alamat %></span>
+        </div>
+
+        <div class="footer-col">
+          <h3>Akun</h3>
+          <% if (currentUser) { %>
+            <span class="footer-strong"><%= currentUser.nama %></span>
+            <span><%= roleLabel(role) %><%= currentUser.no_anggota ? ' · ' + currentUser.no_anggota : '' %></span>
+            <form method="post" action="/logout" class="footer-form">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="footer-link-btn">Keluar dari akun</button>
+            </form>
+          <% } else { %>
+            <a href="/login">Masuk</a>
+            <a href="/daftar">Daftar akun</a>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© <%= new Date().getFullYear() %> <%= settings.nama_perpustakaan %>. Seluruh hak cipta dilindungi.</span>
+        <span>Layanan gratis · Daftar sekali, pinjam kapan saja</span>
+      </div>
+    </footer>
+  </div>
+</div>
+<script src="/app.js" defer></script>
+</body>
+</html>
